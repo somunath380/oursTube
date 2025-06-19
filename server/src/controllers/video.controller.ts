@@ -2,12 +2,14 @@ import { Request, Response } from "express"
 import fs from "fs"
 import path from "path";
 
-import { TranscodingService } from "../services/transcoding.service";
 import { dbService } from "../services/postgres.service";
 import { MinioService } from "../services/minio.service";
 import { extractVideoMetadata } from "../utils/extractMetadata";
 import { videoMetadataInterface } from '../interfaces/videoMetadataInterface';
+import { producerDataInterface } from "../interfaces/producerDataInterface";
 import {uploadVideo, deleteUploadedFile} from "../middlewares/uploadFile"
+import { produceDataToQueue } from "../producer";
+import { config } from "../config/env";
 
 const videoUploadPath: string = path.resolve(__dirname, "../../uploads")
 if (!fs.existsSync(videoUploadPath)){
@@ -54,9 +56,20 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
             }
             const createdVideoInstance = await db.storeVideo(inputDbData)
             await deleteUploadedFile(req.file.path)
-            if (createdVideoInstance){
+            if (!(createdVideoInstance instanceof Error)) {
+                const data: producerDataInterface = {
+                    id: createdVideoInstance.id,
+                    filepath: uploadedVideoObjName,
+                    status: createdVideoInstance.status
+                }
+                await produceDataToQueue(config.QUEUE_NAME, data)
                 res.status(200).json({
                     success: true
+                })
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: "Failed to save video instance in db"
                 })
             }
         }

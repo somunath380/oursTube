@@ -60,5 +60,9 @@ exports.config = {
     MINIO_HOST: String(process.env.MINIO_HOST),
     MINIO_PORT: Number(process.env.MINIO_PORT),
     MINIO_VIDEO_UPLOAD_BUCKET_NAME: String(process.env.MINIO_VIDEO_UPLOAD_BUCKET_NAME),
+    MINIO_MPD_UPLOAD_BUCKET_NAME: String(process.env.MINIO_MPD_UPLOAD_BUCKET_NAME),
+    RABBITMQ_URL: String(process.env.RABBITMQ_URL),
+    QUEUE_NAME: String(process.env.QUEUE_NAME),
+    DLQ_NAME: String(process.env.DLQ_NAME),
 };
 //# sourceMappingURL=env.js.map

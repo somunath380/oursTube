@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "API server",
             "skipFiles": [
                 "<node_internals>/**"
             ],
@@ -15,6 +15,22 @@
                 "NODE_ENV": "dev"
             },
             "program": "${workspaceFolder}/server/src/index.ts",
+            "preLaunchTask": "tsc: build - server/tsconfig.json",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "worker",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "NODE_ENV": "dev"
+            },
+            "program": "${workspaceFolder}/server/src/jobs/index.ts",
             "preLaunchTask": "tsc: build - server/tsconfig.json",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"

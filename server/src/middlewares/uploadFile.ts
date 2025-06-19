@@ -45,8 +45,14 @@ function checkFileType(file: Express.Multer.File, cb: FileFilterCallback) {
 
 export const deleteUploadedFile = async (filePath: string) => {
     try {
-        await unlink(filePath)
-        log(`file at path ${filePath} deleted successfully`)
+        const fileType = await fs.promises.lstat(filePath)
+        if (fileType.isDirectory()){
+            await fs.promises.rm(filePath, {recursive: true, force: true})
+            log(`folder at path ${filePath} deleted successfully`)
+        } else {
+            await unlink(filePath)
+            log(`file at path ${filePath} deleted successfully`)
+        }
     } catch (error) {
         console.error("failed to delete file on path: ", filePath)
     }
