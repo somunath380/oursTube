@@ -1,1 +1,1 @@
-{"version":3,"file":"video.js","sourceRoot":"","sources":["../../src/routes/video.ts"],"names":[],"mappings":";;;;;AACA,sDAAuD;AAEvD,sEAAkE;AAElE,MAAM,WAAW,GAAW,iBAAO,CAAC,MAAM,EAAE,CAAA;AAE5C,WAAW,CAAC,IAAI,CAAC,SAAS,EAAE,qCAAoC,CAAC,CAAA;AAEjE,kBAAe,WAAW,CAAA"}
+{"version":3,"file":"video.js","sourceRoot":"","sources":["../../src/routes/video.ts"],"names":[],"mappings":";;;;;AACA,sDAAuD;AAEvD,sEAAkE;AAGlE,MAAM,WAAW,GAAW,iBAAO,CAAC,MAAM,EAAE,CAAA;AAE5C,WAAW,CAAC,IAAI,CAAC,SAAS,EAAE,qCAAoC,CAAC,CAAA;AAEjE,kBAAe,WAAW,CAAA"}

@@ -4,7 +4,7 @@ CREATE TABLE "video" (
     "title" TEXT NOT NULL,
     "description" TEXT,
     "filepath" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'uploaded',
+    "status" TEXT NOT NULL DEFAULT 'inprogress',
     "duration" INTEGER,
     "resolution" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
