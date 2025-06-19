@@ -53,8 +53,15 @@ function checkFileType(file, cb) {
 }
 const deleteUploadedFile = (filePath) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield (0, promises_1.unlink)(filePath);
-        (0, console_1.log)(`file at path ${filePath} deleted successfully`);
+        const fileType = yield fs_1.default.promises.lstat(filePath);
+        if (fileType.isDirectory()) {
+            yield fs_1.default.promises.rm(filePath, { recursive: true, force: true });
+            (0, console_1.log)(`folder at path ${filePath} deleted successfully`);
+        }
+        else {
+            yield (0, promises_1.unlink)(filePath);
+            (0, console_1.log)(`file at path ${filePath} deleted successfully`);
+        }
     }
     catch (error) {
         console.error("failed to delete file on path: ", filePath);

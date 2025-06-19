@@ -19,6 +19,8 @@ const postgres_service_1 = require("../services/postgres.service");
 const minio_service_1 = require("../services/minio.service");
 const extractMetadata_1 = require("../utils/extractMetadata");
 const uploadFile_1 = require("../middlewares/uploadFile");
+const producer_1 = require("../producer");
+const env_1 = require("../config/env");
 const videoUploadPath = path_1.default.resolve(__dirname, "../../uploads");
 if (!fs_1.default.existsSync(videoUploadPath)) {
     fs_1.default.mkdirSync(videoUploadPath, { recursive: true });
@@ -65,9 +67,21 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
             };
             const createdVideoInstance = yield db.storeVideo(inputDbData);
             yield (0, uploadFile_1.deleteUploadedFile)(req.file.path);
-            if (createdVideoInstance) {
+            if (!(createdVideoInstance instanceof Error)) {
+                const data = {
+                    id: createdVideoInstance.id,
+                    filepath: uploadedVideoObjName,
+                    status: createdVideoInstance.status
+                };
+                yield (0, producer_1.produceDataToQueue)(env_1.config.QUEUE_NAME, data);
                 res.status(200).json({
                     success: true
+                });
+            }
+            else {
+                res.status(500).json({
+                    success: false,
+                    message: "Failed to save video instance in db"
                 });
             }
         }

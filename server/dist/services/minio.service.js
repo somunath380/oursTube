@@ -15,26 +15,53 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MinioService = void 0;
 const path_1 = __importDefault(require("path"));
 const db_1 = require("../db");
-const console_1 = require("console");
 const env_1 = require("../config/env");
+const mime_types_1 = __importDefault(require("mime-types"));
+const fs_1 = __importDefault(require("fs"));
 class MinioService {
     constructor(bucketName = env_1.config.MINIO_VIDEO_UPLOAD_BUCKET_NAME) {
         this.client = db_1.minioClient;
         this.bucket = bucketName;
     }
-    uploadFile(localFilePath, objectName) {
-        return __awaiter(this, void 0, void 0, function* () {
+    uploadFile(localFilePath_1, objectName_1) {
+        return __awaiter(this, arguments, void 0, function* (localFilePath, objectName, bucketName = this.bucket) {
             try {
-                const mimeType = this.getMimeType(localFilePath);
-                yield this.client.fPutObject(this.bucket, objectName, localFilePath, {
+                const mimeType = mime_types_1.default.lookup(localFilePath) || 'application/octet-stream';
+                yield this.client.fPutObject(bucketName, objectName, localFilePath, {
                     'Content-Type': mimeType,
                 });
-                (0, console_1.log)(`Uploaded file ${objectName} to bucket ${this.bucket}`);
+                console.log(`Uploaded file ${objectName} to bucket ${bucketName}`);
                 return true;
             }
             catch (error) {
-                (0, console_1.log)('error while uploading file. error: ', error);
+                console.error('error while uploading file. error: ', error);
                 throw new Error(`error while uploading file. error: ${error}`);
+            }
+        });
+    }
+    uploadFolder(folderPath_1) {
+        return __awaiter(this, arguments, void 0, function* (folderPath, prefix = '') {
+            const uploadRecursive = (dir, basePrefix) => __awaiter(this, void 0, void 0, function* () {
+                const entries = fs_1.default.readdirSync(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path_1.default.join(dir, entry.name);
+                    const relativePath = path_1.default.relative(folderPath, fullPath);
+                    const objectName = path_1.default.join(basePrefix, relativePath).replace(/\\/g, '/');
+                    if (entry.isDirectory()) {
+                        yield uploadRecursive(fullPath, basePrefix);
+                    }
+                    else {
+                        yield this.uploadFile(fullPath, objectName);
+                    }
+                }
+            });
+            try {
+                yield uploadRecursive(folderPath, prefix);
+                return true;
+            }
+            catch (error) {
+                console.error('error while uploading folder. error: ', error);
+                throw new Error(`error while uploading folder. error: ${error}`);
             }
         });
     }
@@ -44,18 +71,10 @@ class MinioService {
                 return this.client.presignedUrl('GET', this.bucket, objectName, expiryInSeconds);
             }
             catch (error) {
-                (0, console_1.log)('error while fetching presigned url. error: ', error);
+                console.error('error while fetching presigned url. error: ', error);
                 throw new Error(`error while fetching presigned url. error: ${error}`);
             }
         });
-    }
-    getMimeType(filename) {
-        const allowedVideoTypes = ['.mp4', '.mov', '.avi', '.mkv', '.webm'];
-        const fileExtension = path_1.default.extname(filename).toLowerCase();
-        if (allowedVideoTypes.includes(fileExtension)) {
-            return 'video/mp4';
-        }
-        throw new Error('Unsupported file type');
     }
 }
 exports.MinioService = MinioService;
