@@ -1,15 +1,14 @@
-
-import './App.css'
-
-import VideoPlayer from './components/videoPlayer'
+import { BrowserRouter as Router } from 'react-router-dom';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import Home from './pages/Home';
+import './App.css';
 
 function App() {
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">DASH Video Player</h1>
-      <VideoPlayer src="http://localhost:3000/videos/song3fc0460f-a5f6-4559-82c8-23a90736f730/song.mpd" />
-    </div>
+    <Router>
+      <Home />
+    </Router>
   );
 }
 
-export default App
+export default App;
