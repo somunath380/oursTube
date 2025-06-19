@@ -46,31 +46,6 @@ body {
   color: white;
 }
 
-/* Custom scrollbar for categories */
-::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Video card hover effects */
-.video-card:hover {
-  transform: scale(1.02);
-  transition: transform 0.2s ease-in-out;
-}
-
 .video-thumbnail {
   aspect-ratio: 16/9;
   overflow: hidden;
@@ -82,27 +57,23 @@ body {
   border-bottom: 1px solid #272727;
 }
 
-.btn-dark {
-  background-color: #272727;
-  border: none;
-}
-
-.btn-dark:hover {
-  background-color: #3f3f3f;
-}
-
 .btn-dark.active {
   background-color: white !important;
   color: black !important;
 }
 
-/* Search bar styles */
 .form-control {
   background-color: #121212 !important;
   border: 1px solid #303030 !important;
 }
 
-.form-control:focus {
-  box-shadow: none !important;
-  border-color: #1c62b9 !important;
+.video-card h6{
+  font-size: 0.95rem;
+}
+.video-card p{
+  font-size: 0.8rem;
+}
+.white-placeholder::placeholder {
+  color: rgb(126, 126, 126);
+  opacity: 1; /* Optional: Ensures it's fully visible */
 }

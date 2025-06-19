@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import VideoCard from '../components/videoCard';
+import UploadVideo from '../modals/uploadVideo';
 import { mockVideos } from '../data';
 import type { Video } from '../interfaces';
 
 const Home: React.FC = () => {
+    const [showUploadModal, setShowUploadModal] = useState(false);
+
     return (
         <div className="min-vh-100">
-            <Navbar />
-            {/* Videos Grid */}
+            <Navbar onUpload={() => setShowUploadModal(true)} />
+            {/* <--------Videos Grid here -------->*/}
             <div className="container-fluid px-4 mt-5">
                 <div className="row g-4">
                     {mockVideos.map((video: Video, index: number) => (
@@ -18,6 +21,10 @@ const Home: React.FC = () => {
                     ))}
                 </div>
             </div>
+            <UploadVideo 
+                isOpen={showUploadModal} 
+                onClose={() => setShowUploadModal(false)} 
+            />
         </div>
     );
 };
