@@ -19,7 +19,7 @@ model video {
   title String
   description String?
   filepath String
-  status String @default("uploaded")
+  status String @default("inprogress")
   duration Int?
   resolution String?
   created_at DateTime @default(now())
