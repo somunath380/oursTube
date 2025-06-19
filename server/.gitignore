@@ -4,3 +4,5 @@ package-lock.json
 firebase-admin.json
 /src/generated/prisma
 /uploads
+
+/src/generated/prisma

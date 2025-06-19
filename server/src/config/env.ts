@@ -11,7 +11,7 @@ dotenv.config({
 
 export const config = {
     NODE_ENV,
-    PORT: process.env.PORT,
+    PORT: Number(process.env.PORT),
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIREY: 60*60*24*2,
     JWT_REFRESH_EXPIRY: 60*60*24*7,
@@ -20,4 +20,9 @@ export const config = {
     PG_DB: String(process.env.PG_DB),
     PG_PORT: Number(process.env.PG_PORT),
     PG_HOST: String(process.env.PG_HOST),
+    MINIO_USER: String(process.env.MINIO_USER),
+    MINIO_PASSWORD: String(process.env.MINIO_PASSWORD),
+    MINIO_HOST: String(process.env.MINIO_HOST),
+    MINIO_PORT: Number(process.env.MINIO_PORT),
+    MINIO_VIDEO_UPLOAD_BUCKET_NAME: String(process.env.MINIO_VIDEO_UPLOAD_BUCKET_NAME),
 }
