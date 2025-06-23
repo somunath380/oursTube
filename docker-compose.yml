@@ -9,9 +9,8 @@ services:
     container_name: server
     ports:
       - 3000:3000
-    environment:
-      - NODE_ENV=dev # change dev to prod for production
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+    env_file:
+      - ./server/.env.dev # change for production
     depends_on:
       - rabbitmq
       - minio
@@ -25,9 +24,8 @@ services:
       dockerfile: worker.Dockerfile
     container_name: worker
     restart: unless-stopped
-    environment:
-      - NODE_ENV=dev # change dev to prod for production
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+    env_file:
+      - ./server/.env.dev # change for production
     depends_on:
       rabbitmq:
         condition: service_healthy

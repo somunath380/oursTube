@@ -8,7 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN apt-get update -y && apt-get install -y openssl
+RUN apt-get update -y && apt-get install -y openssl ffmpeg
 
 RUN npx prisma generate
 
