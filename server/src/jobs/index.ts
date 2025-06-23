@@ -18,7 +18,6 @@ if (!fs.existsSync(transcodedVideoSavedPath)){
 
 // Debug configuration
 log("=== Worker Configuration ===")
-log(`NODE_ENV: ${config.NODE_ENV}`)
 log(`RABBITMQ_URL: ${config.RABBITMQ_URL}`)
 log(`QUEUE_NAME: ${config.QUEUE_NAME}`)
 log(`DLQ_NAME: ${config.DLQ_NAME}`)

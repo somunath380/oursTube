@@ -17,6 +17,7 @@ export class dbService {
             const inputData = {
                 title: data.title,
                 description: data.description,
+                tags: data.tags,
                 filepath: data.filepath,
                 status: data.status,
                 duration: typeof data.duration === 'number' ? data.duration : Number(data.duration),
@@ -56,6 +57,21 @@ export class dbService {
         } catch (error) {
             log("Error updating video status. error: ", error)
             throw new Error("Error updating video status");
+        }
+    }
+
+    
+    async getAllVideos(): Promise<ReturnType<typeof this.dbClient.video.findMany> | Error> {
+        try {
+            const videos = await this.dbClient.video.findMany({
+                orderBy: {
+                    created_at: 'desc'
+                }
+            });
+            return videos;
+        } catch (error) {
+            log("Error getting all videos. error: ", error)
+            throw new Error("Error getting all videos");
         }
     }
 }

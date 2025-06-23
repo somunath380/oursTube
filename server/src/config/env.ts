@@ -17,4 +17,6 @@ export const config = {
     RABBITMQ_URL: String(process.env.RABBITMQ_URL),
     QUEUE_NAME: String(process.env.QUEUE_NAME),
     DLQ_NAME: String(process.env.DLQ_NAME),
+    ELASTICSEARCH_CLIENT_URL: String(process.env.ELASTICSEARCH_CLIENT_URL),
+    ELASTICSEARCH_INDEX: String(process.env.ELASTICSEARCH_INDEX),
 }

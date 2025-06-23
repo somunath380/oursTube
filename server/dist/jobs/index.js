@@ -59,7 +59,6 @@ if (!fs_1.default.existsSync(transcodedVideoSavedPath)) {
     fs_1.default.mkdirSync(transcodedVideoSavedPath, { recursive: true });
 }
 (0, console_1.log)("=== Worker Configuration ===");
-(0, console_1.log)(`NODE_ENV: ${env_1.config.NODE_ENV}`);
 (0, console_1.log)(`RABBITMQ_URL: ${env_1.config.RABBITMQ_URL}`);
 (0, console_1.log)(`QUEUE_NAME: ${env_1.config.QUEUE_NAME}`);
 (0, console_1.log)(`DLQ_NAME: ${env_1.config.DLQ_NAME}`);

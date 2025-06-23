@@ -19,6 +19,7 @@ model video {
   id          String   @id @default(uuid())
   title       String
   description String?
+  tags        String[]
   filepath    String
   status      String   @default("inprogress")
   duration    Int?

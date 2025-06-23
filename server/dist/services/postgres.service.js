@@ -22,6 +22,7 @@ class dbService {
                 const inputData = {
                     title: data.title,
                     description: data.description,
+                    tags: data.tags,
                     filepath: data.filepath,
                     status: data.status,
                     duration: typeof data.duration === 'number' ? data.duration : Number(data.duration),
@@ -62,6 +63,22 @@ class dbService {
             catch (error) {
                 (0, console_1.log)("Error updating video status. error: ", error);
                 throw new Error("Error updating video status");
+            }
+        });
+    }
+    getAllVideos() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const videos = yield this.dbClient.video.findMany({
+                    orderBy: {
+                        created_at: 'desc'
+                    }
+                });
+                return videos;
+            }
+            catch (error) {
+                (0, console_1.log)("Error getting all videos. error: ", error);
+                throw new Error("Error getting all videos");
             }
         });
     }

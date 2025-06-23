@@ -11,9 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "env": {
-                "NODE_ENV": "dev"
-            },
+            "envFile": "${workspaceFolder}/server/.env.dev",
             "program": "${workspaceFolder}/server/src/index.ts",
             "preLaunchTask": "tsc: build - server/tsconfig.json",
             "outFiles": [
@@ -27,9 +25,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "env": {
-                "NODE_ENV": "dev"
-            },
+            "envFile": "${workspaceFolder}/server/.env.dev",
             "program": "${workspaceFolder}/server/src/jobs/index.ts",
             "preLaunchTask": "tsc: build - server/tsconfig.json",
             "outFiles": [

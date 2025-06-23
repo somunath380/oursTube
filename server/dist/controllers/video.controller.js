@@ -12,19 +12,69 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadVideoHandler = void 0;
+exports.getAllVideos = exports.fetchSegment = exports.uploadVideoHandler = exports.searchVideo = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const axios_1 = __importDefault(require("axios"));
 const postgres_service_1 = require("../services/postgres.service");
 const minio_service_1 = require("../services/minio.service");
+const elasticsearch_service_1 = require("../services/elasticsearch.service");
 const extractMetadata_1 = require("../utils/extractMetadata");
 const uploadFile_1 = require("../middlewares/uploadFile");
-const producer_1 = require("../producer");
+const producer_1 = require("../utils/producer");
 const env_1 = require("../config/env");
 const videoUploadPath = path_1.default.resolve(__dirname, "../../uploads");
 if (!fs_1.default.existsSync(videoUploadPath)) {
     fs_1.default.mkdirSync(videoUploadPath, { recursive: true });
 }
+const searchVideo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const query = req.query.search;
+        if (!query || query.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Query parameter `q` is required",
+            });
+        }
+        const esService = new elasticsearch_service_1.EsService(env_1.config.ELASTICSEARCH_INDEX);
+        yield esService.createIndexIfNotExists();
+        const searchResults = yield esService.search(query);
+        const db = new postgres_service_1.dbService();
+        const videosWithDetails = yield Promise.all(searchResults.map((result) => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const videoDetails = yield db.readVideo(result.id);
+                if (videoDetails instanceof Error) {
+                    return null;
+                }
+                return Object.assign(Object.assign({}, videoDetails), { score: result.score });
+            }
+            catch (error) {
+                console.error(`Error fetching video details for ID ${result.id}:`, error);
+                return null;
+            }
+        })));
+        const validVideos = videosWithDetails
+            .filter(video => video !== null)
+            .filter((video, index, self) => index === self.findIndex(v => v.id === video.id));
+        res.status(200).json({
+            success: true,
+            data: {
+                query,
+                total: validVideos.length,
+                videos: validVideos
+            }
+        });
+    }
+    catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({
+            success: false,
+            message: "Search failed",
+            error: error instanceof Error ? error.message : error
+        });
+    }
+});
+exports.searchVideo = searchVideo;
 const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     const uploadVideoFunc = () => new Promise((resolve, reject) => {
@@ -44,13 +94,14 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "No file uploaded"
             });
         }
-        if (!req.body.title || !req.body.description) {
+        if (!req.body.title || !req.body.description || !req.body.tags) {
             yield (0, uploadFile_1.deleteUploadedFile)(req.file.path);
             return res.status(400).json({
                 success: false,
-                message: "Title and Description needs to be provided"
+                message: "Title, Description and Tags needs to be provided"
             });
         }
+        const tags = req.body.tags.split(/\s+/);
         const minio = new minio_service_1.MinioService();
         const isUploadedinMinio = yield minio.uploadFile(req.file.path, (_a = req.file) === null || _a === void 0 ? void 0 : _a.filename);
         if (isUploadedinMinio) {
@@ -60,6 +111,7 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
             const inputDbData = {
                 title: videoMetadata.title,
                 description: videoMetadata.description,
+                tags: tags,
                 filepath: uploadedVideoObjName,
                 status: "in-progress",
                 duration: videoMetadata.duration,
@@ -68,6 +120,14 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
             const createdVideoInstance = yield db.storeVideo(inputDbData);
             yield (0, uploadFile_1.deleteUploadedFile)(req.file.path);
             if (!(createdVideoInstance instanceof Error)) {
+                const esService = new elasticsearch_service_1.EsService(env_1.config.ELASTICSEARCH_INDEX);
+                yield esService.indexDocument({
+                    id: createdVideoInstance.id.toString(),
+                    title: videoMetadata.title,
+                    description: videoMetadata.title,
+                    tags: tags,
+                    upload_date: new Date().toISOString()
+                });
                 const data = {
                     id: createdVideoInstance.id,
                     filepath: uploadedVideoObjName,
@@ -98,4 +158,59 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.uploadVideoHandler = uploadVideoHandler;
+const fetchSegment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { filepath, filename } = req.params;
+        if (!filepath || !filename) {
+            return res.status(400).json({
+                success: false,
+                message: "videoid and filename is required",
+            });
+        }
+        const folder = path_1.default.parse(filepath).name;
+        const objectPath = `${folder}/${filename}`;
+        const minio = new minio_service_1.MinioService('transcodes');
+        const presignedUrl = yield minio.getPresignedUrl(objectPath, 60);
+        if ((presignedUrl instanceof Error)) {
+            throw Error("failed to create presigned url");
+        }
+        const fileStream = yield axios_1.default.get(presignedUrl, { responseType: 'stream' });
+        res.set(fileStream.headers);
+        fileStream.data.pipe(res);
+    }
+    catch (error) {
+        console.error('Error serving segment:', error);
+        res.status(500).json({ error: 'Could not stream video segment.' });
+    }
+});
+exports.fetchSegment = fetchSegment;
+const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const db = new postgres_service_1.dbService();
+        const videos = yield db.getAllVideos();
+        if (videos instanceof Error) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch videos",
+                error: videos.message
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: {
+                total: videos.length,
+                videos: videos
+            }
+        });
+    }
+    catch (error) {
+        console.error('Get all videos error:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch videos",
+            error: error instanceof Error ? error.message : error
+        });
+    }
+});
+exports.getAllVideos = getAllVideos;
 //# sourceMappingURL=video.controller.js.map
