@@ -31,5 +31,5 @@ app.get("/health", (req: Request, res: Response)=>{
 })
 
 app.listen(port, '0.0.0.0', ()=>{
-    log(`started server on port ${config.PORT}. ENV: ${config.NODE_ENV}`);
+    log(`started server on port ${config.PORT}`);
 })
