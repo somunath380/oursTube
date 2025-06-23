@@ -34,8 +34,8 @@ class MinioService {
                 return true;
             }
             catch (error) {
-                console.error('error while uploading file. error: ', error);
-                throw new Error(`error while uploading file. error: ${error}`);
+                console.error('error while uploading file. error: ', (error === null || error === void 0 ? void 0 : error.details) || (error === null || error === void 0 ? void 0 : error.message) || error);
+                throw new Error(`error while uploading file. error: ${(error === null || error === void 0 ? void 0 : error.message) || error}`);
             }
         });
     }
@@ -60,8 +60,8 @@ class MinioService {
                 return true;
             }
             catch (error) {
-                console.error('error while uploading folder. error: ', error);
-                throw new Error(`error while uploading folder. error: ${error}`);
+                console.error('error while uploading folder. error: ', (error === null || error === void 0 ? void 0 : error.message) || error);
+                throw new Error(`error while uploading folder. error: ${(error === null || error === void 0 ? void 0 : error.message) || error}`);
             }
         });
     }
@@ -71,8 +71,8 @@ class MinioService {
                 return this.client.presignedUrl('GET', this.bucket, objectName, expiryInSeconds);
             }
             catch (error) {
-                console.error('error while fetching presigned url. error: ', error);
-                throw new Error(`error while fetching presigned url. error: ${error}`);
+                console.error('error while fetching presigned url. error: ', (error === null || error === void 0 ? void 0 : error.message) || error);
+                throw new Error(`error while fetching presigned url. error: ${(error === null || error === void 0 ? void 0 : error.message) || error}`);
             }
         });
     }

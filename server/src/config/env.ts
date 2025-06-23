@@ -5,6 +5,8 @@ const NODE_ENV = process.env.NODE_ENV || "dev"
 
 const envFilePath = path.resolve(process.cwd(), 'server', `.env.${NODE_ENV}`) // todo: when this is run by launch.json its correct but if run by npm run dev script it might give error
 
+console.log(`using ${envFilePath} for env file`);
+
 dotenv.config({
     path: envFilePath
 })

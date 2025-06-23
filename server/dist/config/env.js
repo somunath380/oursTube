@@ -41,6 +41,7 @@ const dotenv = __importStar(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const NODE_ENV = process.env.NODE_ENV || "dev";
 const envFilePath = path_1.default.resolve(process.cwd(), 'server', `.env.${NODE_ENV}`);
+console.log(`using ${envFilePath} for env file`);
 dotenv.config({
     path: envFilePath
 });

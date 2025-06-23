@@ -1,4 +1,4 @@
-import ampq from "amqplib"
+import * as amqp from "amqplib"
 import path from "path"
 import fs from 'fs'
 
@@ -16,8 +16,29 @@ if (!fs.existsSync(transcodedVideoSavedPath)){
     fs.mkdirSync(transcodedVideoSavedPath, {recursive: true})
 }
 
-async function processVideoUpload() {
-    const connection = await ampq.connect(config.RABBITMQ_URL)
+// Debug configuration
+log("=== Worker Configuration ===")
+log(`NODE_ENV: ${config.NODE_ENV}`)
+log(`RABBITMQ_URL: ${config.RABBITMQ_URL}`)
+log(`QUEUE_NAME: ${config.QUEUE_NAME}`)
+log(`DLQ_NAME: ${config.DLQ_NAME}`)
+log("===========================")
+
+async function testRabbitMQConnection(): Promise<boolean> {
+    try {
+        log(`Testing connection to: ${config.RABBITMQ_URL}`)
+        const connection = await amqp.connect(config.RABBITMQ_URL)
+        await connection.close()
+        log("RabbitMQ connection test successful!")
+        return true
+    } catch (error) {
+        log(`RabbitMQ connection test failed: ${error}`)
+        return false
+    }
+}
+
+async function processVideoUpload(connection: any) {
+    // const connection = await ampq.connect(config.RABBITMQ_URL)
     const channel = await connection.createChannel()
     await channel.assertQueue(config.QUEUE_NAME, {
         deadLetterExchange: '',
@@ -25,7 +46,7 @@ async function processVideoUpload() {
         deadLetterRoutingKey: config.DLQ_NAME
     })
     log("processing data in queue", config.QUEUE_NAME)
-    channel.consume(config.QUEUE_NAME, async (message) => {
+    channel.consume(config.QUEUE_NAME, async (message: any) => {
         if (!message) return
         const data: producerDataInterface = JSON.parse(message.content.toString())
         log(`processing data: ${JSON.stringify(message)}`)
@@ -69,6 +90,74 @@ async function processVideoUpload() {
             channel.nack(message, false, false)
         }
     })
+
+    // Handle connection close
+    connection.on('close', () => {
+        log('RabbitMQ connection closed. Attempting to reconnect...')
+        setTimeout(() => connectAndProcess(), 5000)
+    })
+
+    connection.on('error', (error: any) => {
+        log('RabbitMQ connection error:', error)
+    })
 }
 
-processVideoUpload()
+async function connectAndProcess() {
+    const maxRetries = 30
+    const retryDelay = 3000
+    
+    // Add initial delay to ensure RabbitMQ is ready
+    log("Waiting for RabbitMQ to be ready...")
+    await new Promise(resolve => setTimeout(resolve, 15000))
+    
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            log(`Attempting to connect to RabbitMQ (attempt ${i + 1}/${maxRetries})...`)
+            log(`Connecting to: ${config.RABBITMQ_URL}`)
+            
+            const connection = await amqp.connect(config.RABBITMQ_URL)
+            log("Successfully connected to RabbitMQ!")
+            await processVideoUpload(connection)
+            return // Exit the function if connection is successful
+        } catch (error) {
+            log(`Failed to connect to RabbitMQ (attempt ${i + 1}/${maxRetries}): ${error}`)
+            if (i < maxRetries - 1) {
+                log(`Retrying in ${retryDelay}ms...`)
+                await new Promise(resolve => setTimeout(resolve, retryDelay))
+            } else {
+                log(`Failed to connect to RabbitMQ after ${maxRetries} attempts. Exiting...`)
+                process.exit(1)
+            }
+        }
+    }
+}
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    log(`Uncaught Exception: ${error}`)
+    log('Attempting to restart worker in 10 seconds...')
+    setTimeout(() => {
+        connectAndProcess().catch((err) => {
+            log(`Fatal error in worker: ${err}`)
+            process.exit(1)
+        })
+    }, 10000)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+    log(`Unhandled Rejection at: ${promise}, reason: ${reason}`)
+    log('Attempting to restart worker in 10 seconds...')
+    setTimeout(() => {
+        connectAndProcess().catch((err) => {
+            log(`Fatal error in worker: ${err}`)
+            process.exit(1)
+        })
+    }, 10000)
+})
+
+// Start the worker
+log("Starting worker...")
+connectAndProcess().catch((error) => {
+    log(`Fatal error in worker: ${error}`)
+    process.exit(1)
+})

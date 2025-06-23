@@ -22,9 +22,9 @@ export class MinioService {
             });
             console.log(`Uploaded file ${objectName} to bucket ${bucketName}`);
             return true;
-        } catch (error) {
-            console.error('error while uploading file. error: ', error);
-            throw new Error(`error while uploading file. error: ${error}`);
+        } catch (error: any) {
+            console.error('error while uploading file. error: ', error?.details || error?.message || error);
+            throw new Error(`error while uploading file. error: ${error?.message || error}`);
         }
     }
     async uploadFolder(folderPath: string, prefix: string = ''): Promise<boolean | Error> {
@@ -44,17 +44,17 @@ export class MinioService {
         try {
             await uploadRecursive(folderPath, prefix);
             return true
-        } catch (error) {
-            console.error('error while uploading folder. error: ', error);
-            throw new Error(`error while uploading folder. error: ${error}`);
+        } catch (error: any) {
+            console.error('error while uploading folder. error: ', error?.message || error);
+            throw new Error(`error while uploading folder. error: ${error?.message || error}`);
         }
     }
     async getPresignedUrl(objectName: string, expiryInSeconds = 86400): Promise<string | Error> {
         try {
             return this.client.presignedUrl('GET', this.bucket, objectName, expiryInSeconds);
-        } catch (error) {
-            console.error('error while fetching presigned url. error: ', error);
-            throw new Error(`error while fetching presigned url. error: ${error}`);
+        } catch (error: any) {
+            console.error('error while fetching presigned url. error: ', error?.message || error);
+            throw new Error(`error while fetching presigned url. error: ${error?.message || error}`);
         }
     }
 }
