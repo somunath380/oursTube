@@ -77,3 +77,13 @@ body {
   color: rgb(126, 126, 126);
   opacity: 1; /* Optional: Ensures it's fully visible */
 }
+.modal-body .form-control{
+  background-color: transparent !important;
+  border: 0.3px solid #707070 !important;
+}
+.modal-body .white-placeholder::placeholder {
+  color: #707070;
+}
+.modal-body .form-label{
+  font-size: 0.8rem;
+}
