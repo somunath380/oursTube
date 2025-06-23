@@ -11,7 +11,7 @@ const path_1 = __importDefault(require("path"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const index_1 = __importDefault(require("./routes/index"));
 const app = (0, express_1.default)();
-const port = Number(env_1.config.PORT);
+const port = env_1.config.PORT || 3000;
 const corsOptions = {
     origin: "*",
     methods: ["*"]
@@ -26,7 +26,7 @@ app.get("/health", (req, res) => {
         success: true
     });
 });
-app.listen(port, 'localhost', () => {
+app.listen(port, '0.0.0.0', () => {
     (0, console_1.log)(`started server on port ${env_1.config.PORT}. ENV: ${env_1.config.NODE_ENV}`);
 });
 //# sourceMappingURL=index.js.map

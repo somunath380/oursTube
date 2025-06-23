@@ -9,7 +9,7 @@ import router from "./routes/index"
 
 const app: Application = express()
 
-const port: number = Number(config.PORT)
+const port = config.PORT || 3000
 
 const corsOptions: CorsOptions = {
     origin: "*", // todo: change this later
@@ -30,6 +30,6 @@ app.get("/health", (req: Request, res: Response)=>{
     })
 })
 
-app.listen(port, 'localhost', ()=>{
+app.listen(port, '0.0.0.0', ()=>{
     log(`started server on port ${config.PORT}. ENV: ${config.NODE_ENV}`);
 })

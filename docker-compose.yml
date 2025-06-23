@@ -1,17 +1,51 @@
 version: '3.8'
 services:
+
+  server:
+    image: server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - 3000:3000
+    env_file:
+      - ./server/.env.dev # change for production
+    depends_on:
+      - rabbitmq
+      - minio
+    networks:
+      - onepiece
+
+  worker:
+    image: worker
+    build:
+      context: ./server
+      dockerfile: worker.Dockerfile
+    container_name: worker
+    restart: unless-stopped
+    env_file:
+      - ./server/.env.dev # change for production
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - onepiece
+
   minio:
     image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000"     # API endpoint
-      - "9001:9001"     # Web UI
+      - "9000:9000" 
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: admin123
     volumes:
       - minio-data:/data
     command: server --console-address ":9001" /data
+    networks:
+      - onepiece
 
   postgres:
     image: postgres:17
@@ -24,6 +58,8 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - onepiece
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -34,7 +70,47 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - onepiece
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false            # security disabled for local dev
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m          # adjust heap size
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - onepiece
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    networks:
+      - onepiece
 
 volumes:
   minio-data:
   pgdata:
+  esdata:
+
+networks:
+  onepiece:
+    driver: bridge
