@@ -17,6 +17,7 @@ export class dbService {
             const inputData = {
                 title: data.title,
                 description: data.description,
+                tags: data.tags,
                 filepath: data.filepath,
                 status: data.status,
                 duration: typeof data.duration === 'number' ? data.duration : Number(data.duration),
@@ -46,16 +47,34 @@ export class dbService {
     /**
      * update status of video
      */
-    async updateVideoStatus(id: string, status: string = "uploaded"): Promise<ReturnType<typeof this.dbClient.video.update> | Error>{
+    async updateVideoData(id: string, data: any): Promise<ReturnType<typeof this.dbClient.video.update> | Error>{
         try {
             const videoData = await this.dbClient.video.update({
                 where: {id: id},
-                data: {status: status}
+                data
             })
             return videoData
         } catch (error) {
             log("Error updating video status. error: ", error)
             throw new Error("Error updating video status");
+        }
+    }
+
+    
+    async getAllVideos(): Promise<ReturnType<typeof this.dbClient.video.findMany> | Error> {
+        try {
+            const videos = await this.dbClient.video.findMany({
+                where: {
+                    status: "uploaded"
+                },
+                orderBy: {
+                    created_at: 'desc'
+                }
+            });
+            return videos;
+        } catch (error) {
+            log("Error getting all videos. error: ", error)
+            throw new Error("Error getting all videos");
         }
     }
 }

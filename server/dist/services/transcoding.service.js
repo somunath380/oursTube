@@ -55,6 +55,26 @@ class TranscodingService {
             });
         });
     }
+    extractThumbnail(inputPath, outputPath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve, reject) => {
+                const outputDir = path_1.default.dirname(outputPath);
+                const filename = path_1.default.basename(outputPath);
+                if (!fs_1.default.existsSync(outputDir)) {
+                    fs_1.default.mkdirSync(outputDir, { recursive: true });
+                }
+                (0, fluent_ffmpeg_1.default)(inputPath)
+                    .screenshots({
+                    timestamps: ['10'],
+                    filename: filename,
+                    folder: outputDir,
+                    size: '640x?'
+                })
+                    .on('end', () => resolve(outputPath))
+                    .on('error', err => reject(err));
+            });
+        });
+    }
 }
 exports.TranscodingService = TranscodingService;
 //# sourceMappingURL=transcoding.service.js.map

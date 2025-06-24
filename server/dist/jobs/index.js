@@ -54,30 +54,13 @@ const transcoding_service_1 = require("../services/transcoding.service");
 const minio_service_1 = require("../services/minio.service");
 const uploadFile_1 = require("../middlewares/uploadFile");
 const postgres_service_1 = require("../services/postgres.service");
-const transcodedVideoSavedPath = path_1.default.resolve(__dirname, "../../transcodes");
-if (!fs_1.default.existsSync(transcodedVideoSavedPath)) {
-    fs_1.default.mkdirSync(transcodedVideoSavedPath, { recursive: true });
+const baseTranscodeDir = path_1.default.resolve(__dirname, "../../transcodes");
+if (!fs_1.default.existsSync(baseTranscodeDir)) {
+    fs_1.default.mkdirSync(baseTranscodeDir, { recursive: true });
 }
-(0, console_1.log)("=== Worker Configuration ===");
-(0, console_1.log)(`NODE_ENV: ${env_1.config.NODE_ENV}`);
-(0, console_1.log)(`RABBITMQ_URL: ${env_1.config.RABBITMQ_URL}`);
-(0, console_1.log)(`QUEUE_NAME: ${env_1.config.QUEUE_NAME}`);
-(0, console_1.log)(`DLQ_NAME: ${env_1.config.DLQ_NAME}`);
-(0, console_1.log)("===========================");
-function testRabbitMQConnection() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            (0, console_1.log)(`Testing connection to: ${env_1.config.RABBITMQ_URL}`);
-            const connection = yield amqp.connect(env_1.config.RABBITMQ_URL);
-            yield connection.close();
-            (0, console_1.log)("RabbitMQ connection test successful!");
-            return true;
-        }
-        catch (error) {
-            (0, console_1.log)(`RabbitMQ connection test failed: ${error}`);
-            return false;
-        }
-    });
+const baseThumbnailDir = path_1.default.resolve(__dirname, "../../thumbnails");
+if (!fs_1.default.existsSync(baseThumbnailDir)) {
+    fs_1.default.mkdirSync(baseThumbnailDir, { recursive: true });
 }
 function processVideoUpload(connection) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -87,36 +70,44 @@ function processVideoUpload(connection) {
             durable: true,
             deadLetterRoutingKey: env_1.config.DLQ_NAME
         });
-        (0, console_1.log)("processing data in queue", env_1.config.QUEUE_NAME);
+        (0, console_1.log)("received data in queue", env_1.config.QUEUE_NAME);
         channel.consume(env_1.config.QUEUE_NAME, (message) => __awaiter(this, void 0, void 0, function* () {
             if (!message)
                 return;
             const data = JSON.parse(message.content.toString());
             (0, console_1.log)(`processing data: ${JSON.stringify(message)}`);
+            const folderName = data.folderName;
+            const outputPath = path_1.default.resolve(baseTranscodeDir, folderName, (folderName + '.mpd'));
+            const thumbnailPath = path_1.default.resolve(baseThumbnailDir, (folderName + '.jpg'));
             try {
                 const transcoder = new transcoding_service_1.TranscodingService();
                 const minio = new minio_service_1.MinioService();
-                const presignedUrl = yield minio.getPresignedUrl(data.filepath);
+                const objPath = folderName + '/' + data.filename;
+                const presignedUrl = yield minio.getPresignedUrl(objPath);
                 if (typeof presignedUrl !== "string") {
                     (0, console_1.log)("Failed to get presigned URL:", presignedUrl instanceof Error ? presignedUrl.message : presignedUrl);
                     throw new Error("Failed to get presigned URL");
                 }
-                const folderName = path_1.default.parse(data.filepath).name;
-                const fileName = folderName + ".mpd";
-                const outputPath = path_1.default.resolve(transcodedVideoSavedPath, folderName, fileName);
                 yield transcoder.transcodeVideo(presignedUrl, outputPath);
-                let uploadSuccess = yield minio.uploadFolder(path_1.default.resolve(transcodedVideoSavedPath, folderName), folderName);
-                if (uploadSuccess) {
-                    channel.ack(message);
-                    yield (0, uploadFile_1.deleteUploadedFile)(path_1.default.resolve(transcodedVideoSavedPath, folderName));
+                let uploadSuccess = yield minio.uploadFolder(path_1.default.resolve(baseTranscodeDir, folderName), folderName);
+                yield transcoder.extractThumbnail(presignedUrl, thumbnailPath);
+                const uploadThumbnailSuccess = yield minio.uploadFile(thumbnailPath, folderName + "/" + path_1.default.basename(thumbnailPath));
+                if (uploadSuccess && uploadThumbnailSuccess) {
+                    yield (0, uploadFile_1.deleteUploadedFile)(path_1.default.dirname(outputPath));
+                    yield (0, uploadFile_1.deleteUploadedFile)(thumbnailPath);
                     const db = new postgres_service_1.dbService();
-                    yield db.updateVideoStatus(data.id);
+                    const thumbUrl = yield minio.getPresignedUrl(folderName + "/" + (folderName + '.jpg'), 3600);
+                    yield db.updateVideoData(data.id, {
+                        status: "uploaded",
+                        thumbnail: thumbUrl
+                    });
+                    channel.ack(message);
                 }
             }
             catch (error) {
                 (0, console_1.log)(`Error processing data. error: ${error} for data: ${JSON.stringify(message)}`);
-                const folderName = path_1.default.parse(data.filepath).name;
-                yield (0, uploadFile_1.deleteUploadedFile)(path_1.default.resolve(transcodedVideoSavedPath, folderName));
+                yield (0, uploadFile_1.deleteUploadedFile)(path_1.default.dirname(outputPath));
+                yield (0, uploadFile_1.deleteUploadedFile)(thumbnailPath);
                 const retryCount = message.properties && message.properties.headers && typeof message.properties.headers["x-retry"] !== "undefined"
                     ? message.properties.headers["x-retry"]
                     : 0;
@@ -145,7 +136,7 @@ function processVideoUpload(connection) {
 }
 function connectAndProcess() {
     return __awaiter(this, void 0, void 0, function* () {
-        const maxRetries = 30;
+        const maxRetries = 10;
         const retryDelay = 3000;
         (0, console_1.log)("Waiting for RabbitMQ to be ready...");
         yield new Promise(resolve => setTimeout(resolve, 15000));
@@ -166,7 +157,6 @@ function connectAndProcess() {
                 }
                 else {
                     (0, console_1.log)(`Failed to connect to RabbitMQ after ${maxRetries} attempts. Exiting...`);
-                    process.exit(1);
                 }
             }
         }
@@ -178,7 +168,6 @@ process.on('uncaughtException', (error) => {
     setTimeout(() => {
         connectAndProcess().catch((err) => {
             (0, console_1.log)(`Fatal error in worker: ${err}`);
-            process.exit(1);
         });
     }, 10000);
 });
@@ -188,13 +177,11 @@ process.on('unhandledRejection', (reason, promise) => {
     setTimeout(() => {
         connectAndProcess().catch((err) => {
             (0, console_1.log)(`Fatal error in worker: ${err}`);
-            process.exit(1);
         });
     }, 10000);
 });
 (0, console_1.log)("Starting worker...");
 connectAndProcess().catch((error) => {
     (0, console_1.log)(`Fatal error in worker: ${error}`);
-    process.exit(1);
 });
 //# sourceMappingURL=index.js.map

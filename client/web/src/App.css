@@ -1,8 +1,18 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: initial;
+}
+
+.form-control::placeholder {
+  color: #c2c1c1 !important; /* or any light color you prefer */
+  opacity: 1;
+}
+
+.form-control {
+  color: #fff !important;           /* Makes typed text white/brighter */
+  background-color: #222 !important; /* Optional: keeps background dark */
 }
 
 .logo {

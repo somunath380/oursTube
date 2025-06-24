@@ -894,6 +894,7 @@ export namespace Prisma {
     title: string | null
     description: string | null
     filepath: string | null
+    thumbnail: string | null
     status: string | null
     duration: number | null
     resolution: string | null
@@ -905,6 +906,7 @@ export namespace Prisma {
     title: string | null
     description: string | null
     filepath: string | null
+    thumbnail: string | null
     status: string | null
     duration: number | null
     resolution: string | null
@@ -915,7 +917,9 @@ export namespace Prisma {
     id: number
     title: number
     description: number
+    tags: number
     filepath: number
+    thumbnail: number
     status: number
     duration: number
     resolution: number
@@ -937,6 +941,7 @@ export namespace Prisma {
     title?: true
     description?: true
     filepath?: true
+    thumbnail?: true
     status?: true
     duration?: true
     resolution?: true
@@ -948,6 +953,7 @@ export namespace Prisma {
     title?: true
     description?: true
     filepath?: true
+    thumbnail?: true
     status?: true
     duration?: true
     resolution?: true
@@ -958,7 +964,9 @@ export namespace Prisma {
     id?: true
     title?: true
     description?: true
+    tags?: true
     filepath?: true
+    thumbnail?: true
     status?: true
     duration?: true
     resolution?: true
@@ -1056,7 +1064,9 @@ export namespace Prisma {
     id: string
     title: string
     description: string | null
+    tags: string[]
     filepath: string
+    thumbnail: string | null
     status: string
     duration: number | null
     resolution: string | null
@@ -1086,7 +1096,9 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    tags?: boolean
     filepath?: boolean
+    thumbnail?: boolean
     status?: boolean
     duration?: boolean
     resolution?: boolean
@@ -1097,7 +1109,9 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    tags?: boolean
     filepath?: boolean
+    thumbnail?: boolean
     status?: boolean
     duration?: boolean
     resolution?: boolean
@@ -1108,7 +1122,9 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    tags?: boolean
     filepath?: boolean
+    thumbnail?: boolean
     status?: boolean
     duration?: boolean
     resolution?: boolean
@@ -1119,14 +1135,16 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     description?: boolean
+    tags?: boolean
     filepath?: boolean
+    thumbnail?: boolean
     status?: boolean
     duration?: boolean
     resolution?: boolean
     created_at?: boolean
   }
 
-  export type videoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "filepath" | "status" | "duration" | "resolution" | "created_at", ExtArgs["result"]["video"]>
+  export type videoOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "description" | "tags" | "filepath" | "thumbnail" | "status" | "duration" | "resolution" | "created_at", ExtArgs["result"]["video"]>
 
   export type $videoPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "video"
@@ -1135,7 +1153,9 @@ export namespace Prisma {
       id: string
       title: string
       description: string | null
+      tags: string[]
       filepath: string
+      thumbnail: string | null
       status: string
       duration: number | null
       resolution: string | null
@@ -1566,7 +1586,9 @@ export namespace Prisma {
     readonly id: FieldRef<"video", 'String'>
     readonly title: FieldRef<"video", 'String'>
     readonly description: FieldRef<"video", 'String'>
+    readonly tags: FieldRef<"video", 'String[]'>
     readonly filepath: FieldRef<"video", 'String'>
+    readonly thumbnail: FieldRef<"video", 'String'>
     readonly status: FieldRef<"video", 'String'>
     readonly duration: FieldRef<"video", 'Int'>
     readonly resolution: FieldRef<"video", 'String'>
@@ -1955,7 +1977,9 @@ export namespace Prisma {
     id: 'id',
     title: 'title',
     description: 'description',
+    tags: 'tags',
     filepath: 'filepath',
+    thumbnail: 'thumbnail',
     status: 'status',
     duration: 'duration',
     resolution: 'resolution',
@@ -2060,7 +2084,9 @@ export namespace Prisma {
     id?: StringFilter<"video"> | string
     title?: StringFilter<"video"> | string
     description?: StringNullableFilter<"video"> | string | null
+    tags?: StringNullableListFilter<"video">
     filepath?: StringFilter<"video"> | string
+    thumbnail?: StringNullableFilter<"video"> | string | null
     status?: StringFilter<"video"> | string
     duration?: IntNullableFilter<"video"> | number | null
     resolution?: StringNullableFilter<"video"> | string | null
@@ -2071,7 +2097,9 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrderInput | SortOrder
+    tags?: SortOrder
     filepath?: SortOrder
+    thumbnail?: SortOrderInput | SortOrder
     status?: SortOrder
     duration?: SortOrderInput | SortOrder
     resolution?: SortOrderInput | SortOrder
@@ -2085,7 +2113,9 @@ export namespace Prisma {
     NOT?: videoWhereInput | videoWhereInput[]
     title?: StringFilter<"video"> | string
     description?: StringNullableFilter<"video"> | string | null
+    tags?: StringNullableListFilter<"video">
     filepath?: StringFilter<"video"> | string
+    thumbnail?: StringNullableFilter<"video"> | string | null
     status?: StringFilter<"video"> | string
     duration?: IntNullableFilter<"video"> | number | null
     resolution?: StringNullableFilter<"video"> | string | null
@@ -2096,7 +2126,9 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrderInput | SortOrder
+    tags?: SortOrder
     filepath?: SortOrder
+    thumbnail?: SortOrderInput | SortOrder
     status?: SortOrder
     duration?: SortOrderInput | SortOrder
     resolution?: SortOrderInput | SortOrder
@@ -2115,7 +2147,9 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"video"> | string
     title?: StringWithAggregatesFilter<"video"> | string
     description?: StringNullableWithAggregatesFilter<"video"> | string | null
+    tags?: StringNullableListFilter<"video">
     filepath?: StringWithAggregatesFilter<"video"> | string
+    thumbnail?: StringNullableWithAggregatesFilter<"video"> | string | null
     status?: StringWithAggregatesFilter<"video"> | string
     duration?: IntNullableWithAggregatesFilter<"video"> | number | null
     resolution?: StringNullableWithAggregatesFilter<"video"> | string | null
@@ -2126,7 +2160,9 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    tags?: videoCreatetagsInput | string[]
     filepath: string
+    thumbnail?: string | null
     status?: string
     duration?: number | null
     resolution?: string | null
@@ -2137,7 +2173,9 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    tags?: videoCreatetagsInput | string[]
     filepath: string
+    thumbnail?: string | null
     status?: string
     duration?: number | null
     resolution?: string | null
@@ -2148,7 +2186,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    tags?: videoUpdatetagsInput | string[]
     filepath?: StringFieldUpdateOperationsInput | string
+    thumbnail?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     duration?: NullableIntFieldUpdateOperationsInput | number | null
     resolution?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2159,7 +2199,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    tags?: videoUpdatetagsInput | string[]
     filepath?: StringFieldUpdateOperationsInput | string
+    thumbnail?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     duration?: NullableIntFieldUpdateOperationsInput | number | null
     resolution?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2170,7 +2212,9 @@ export namespace Prisma {
     id?: string
     title: string
     description?: string | null
+    tags?: videoCreatetagsInput | string[]
     filepath: string
+    thumbnail?: string | null
     status?: string
     duration?: number | null
     resolution?: string | null
@@ -2181,7 +2225,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    tags?: videoUpdatetagsInput | string[]
     filepath?: StringFieldUpdateOperationsInput | string
+    thumbnail?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     duration?: NullableIntFieldUpdateOperationsInput | number | null
     resolution?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2192,7 +2238,9 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    tags?: videoUpdatetagsInput | string[]
     filepath?: StringFieldUpdateOperationsInput | string
+    thumbnail?: NullableStringFieldUpdateOperationsInput | string | null
     status?: StringFieldUpdateOperationsInput | string
     duration?: NullableIntFieldUpdateOperationsInput | number | null
     resolution?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2229,6 +2277,14 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
   export type IntNullableFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
     in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
@@ -2260,7 +2316,9 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     description?: SortOrder
+    tags?: SortOrder
     filepath?: SortOrder
+    thumbnail?: SortOrder
     status?: SortOrder
     duration?: SortOrder
     resolution?: SortOrder
@@ -2276,6 +2334,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     filepath?: SortOrder
+    thumbnail?: SortOrder
     status?: SortOrder
     duration?: SortOrder
     resolution?: SortOrder
@@ -2287,6 +2346,7 @@ export namespace Prisma {
     title?: SortOrder
     description?: SortOrder
     filepath?: SortOrder
+    thumbnail?: SortOrder
     status?: SortOrder
     duration?: SortOrder
     resolution?: SortOrder
@@ -2363,12 +2423,21 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type videoCreatetagsInput = {
+    set: string[]
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
+  }
+
+  export type videoUpdatetagsInput = {
+    set?: string[]
+    push?: string | string[]
   }
 
   export type NullableIntFieldUpdateOperationsInput = {

@@ -1,6 +1,7 @@
 interface producerDataInterface {
     id: string;
-    filepath: string;
+    folderName: string;
+    filename: string;
     status: string;
 }
 export type {producerDataInterface}

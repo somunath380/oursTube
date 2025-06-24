@@ -1,7 +1,7 @@
 import amqp from "amqplib"
-import {config} from "./config/env"
+import {config} from "../config/env"
 import { log } from "console"
-import { producerDataInterface } from "./interfaces/producerDataInterface"
+import { producerDataInterface } from "../interfaces/producerDataInterface"
 
 export const produceDataToQueue = async (queueName: string, data: producerDataInterface) => {
     try {

@@ -19,15 +19,25 @@ const fs_1 = __importDefault(require("fs"));
 const uuid_1 = require("uuid");
 const promises_1 = require("fs/promises");
 const console_1 = require("console");
-const videoUploadPath = path_1.default.resolve(__dirname, "../../uploads");
-if (!fs_1.default.existsSync(videoUploadPath)) {
-    fs_1.default.mkdirSync(videoUploadPath, { recursive: true });
+const baseVideoUploadPath = path_1.default.resolve(__dirname, "../../uploads");
+if (!fs_1.default.existsSync(baseVideoUploadPath)) {
+    fs_1.default.mkdirSync(baseVideoUploadPath, { recursive: true });
 }
 const storage = multer_1.default.diskStorage({
-    destination: videoUploadPath,
-    filename: (req, file, cb) => {
+    destination: (req, file, cb) => {
+        const uniqueId = (0, uuid_1.v4)();
         const fileDetails = path_1.default.parse(file.originalname);
-        const uniqueFilename = fileDetails.name + (0, uuid_1.v4)() + fileDetails.ext;
+        const uniqueFolderName = path_1.default.join(baseVideoUploadPath, (fileDetails.name + uniqueId));
+        if (!fs_1.default.existsSync(uniqueFolderName)) {
+            fs_1.default.mkdirSync(uniqueFolderName, { recursive: true });
+        }
+        req.uniqueId = uniqueId;
+        cb(null, uniqueFolderName);
+    },
+    filename: (req, file, cb) => {
+        const uniqueId = req.uniqueId;
+        const fileDetails = path_1.default.parse(file.originalname);
+        const uniqueFilename = fileDetails.name + uniqueId + fileDetails.ext;
         cb(null, uniqueFilename);
     }
 });

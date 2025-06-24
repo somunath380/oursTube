@@ -6,16 +6,26 @@ import {v4 as uuid4} from "uuid"
 import { unlink } from "fs/promises"
 import { log } from "console"
 
-const videoUploadPath: string = path.resolve(__dirname, "../../uploads")
-if (!fs.existsSync(videoUploadPath)){
-    fs.mkdirSync(videoUploadPath, {recursive: true})
+const baseVideoUploadPath: string = path.resolve(__dirname, "../../uploads")
+if (!fs.existsSync(baseVideoUploadPath)){
+    fs.mkdirSync(baseVideoUploadPath, {recursive: true})
 }
 
 const storage = multer.diskStorage({
-    destination: videoUploadPath,
-    filename: (req: Request, file: Express.Multer.File, cb) => {
+    destination: (req: Request, file: Express.Multer.File, cb) => {
+        const uniqueId = uuid4()
         const fileDetails = path.parse(file.originalname)
-        const uniqueFilename = fileDetails.name + uuid4() + fileDetails.ext
+        const uniqueFolderName = path.join(baseVideoUploadPath, (fileDetails.name + uniqueId))
+        if (!fs.existsSync(uniqueFolderName)){
+            fs.mkdirSync(uniqueFolderName, {recursive: true})
+        }
+        (req as any).uniqueId = uniqueId
+        cb(null, uniqueFolderName)
+    },
+    filename: (req: Request, file: Express.Multer.File, cb) => {
+        const uniqueId = (req as any).uniqueId
+        const fileDetails = path.parse(file.originalname)
+        const uniqueFilename = fileDetails.name + uniqueId + fileDetails.ext
         cb(null, uniqueFilename);
     }
 });
