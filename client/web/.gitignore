@@ -24,5 +24,4 @@ package-lock.json
 *.sln
 *.sw?
 
-firebase.ts
 
