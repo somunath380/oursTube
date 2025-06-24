@@ -5,6 +5,7 @@ import { JWTPayload } from "../interfaces/tokens"
 import { generateRefreshToken, generateToken, verifyRefreshToken } from "../utils/tokens"
 import { RefreshTokenValidationError, RefreshTokenNotExistError } from "../utils/errors"
 
+
 export const signIn = async (req: Request, res: Response) => {
     try {
         const {token} = req.body

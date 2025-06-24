@@ -64,6 +64,9 @@ export class dbService {
     async getAllVideos(): Promise<ReturnType<typeof this.dbClient.video.findMany> | Error> {
         try {
             const videos = await this.dbClient.video.findMany({
+                where: {
+                    status: "uploaded"
+                },
                 orderBy: {
                     created_at: 'desc'
                 }

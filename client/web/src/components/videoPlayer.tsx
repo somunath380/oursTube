@@ -1,4 +1,3 @@
-// components/DashPlayer.tsx
 import { useEffect, useRef } from 'react';
 import * as dashjs from 'dashjs';
 
@@ -6,12 +5,14 @@ interface VideoPlayerProps {
   src: string;
   autoPlay?: boolean;
   controls?: boolean;
+  style?: React.CSSProperties;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({
+const VideoPlayer: React.FC<VideoPlayerProps & { style?: React.CSSProperties }> = ({
   src,
   autoPlay = true,
   controls = true,
+  style = {},
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -26,6 +27,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <video
       ref={videoRef}
       controls={controls}
+      style={style}
       className="w-full max-w-3xl rounded-lg shadow"
     />
   );

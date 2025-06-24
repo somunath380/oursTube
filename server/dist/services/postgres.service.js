@@ -70,6 +70,9 @@ class dbService {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const videos = yield this.dbClient.video.findMany({
+                    where: {
+                        status: "uploaded"
+                    },
                     orderBy: {
                         created_at: 'desc'
                     }

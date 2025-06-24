@@ -1,16 +1,17 @@
-import { log } from "console"
 import express, {Router, RequestHandler} from "express"
 
-import {uploadVideoHandler, searchVideo, fetchSegment, getAllVideos} from "../controllers/video.controller"
-// import {uploadVideo} from "../middlewares/uploadFile"
+import {uploadVideoHandler, searchVideo, fetchSegment, getAllVideos, fetchManifest} from "../controllers/video.controller"
+import { authenticate } from "../middlewares/auth"
 
 const videoRouter: Router = express.Router()
 
-videoRouter.post("/upload", uploadVideoHandler as RequestHandler)
+videoRouter.post("/upload", authenticate as RequestHandler, uploadVideoHandler as RequestHandler)
 
-videoRouter.get("/search", searchVideo as RequestHandler)
+videoRouter.get("/search", authenticate as RequestHandler, searchVideo as RequestHandler)
 
-videoRouter.get("/all", getAllVideos as RequestHandler)
+videoRouter.get("/all", authenticate as RequestHandler, getAllVideos as RequestHandler)
+
+videoRouter.get("/manifest/:filepath", fetchManifest as RequestHandler);
 
 videoRouter.get("/segment/:filepath/:filename", fetchSegment as RequestHandler)
 

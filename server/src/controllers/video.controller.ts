@@ -160,6 +160,40 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
     }
 }
 
+export const fetchManifest = async (req: Request, res: Response) => {
+    try {
+        const { filepath } = req.params; // e.g., song123.mp4
+        if (!filepath) {
+            return res.status(400).json({
+                success: false,
+                message: "filepath is required",
+            });
+        }
+        const folder = path.parse(filepath).name; // remove .mp4
+        const objectPath = `${folder}/${folder}.mpd`;
+        const minio = new MinioService();
+        const presignedUrl = await minio.getPresignedUrl(objectPath, 60);
+        if (presignedUrl instanceof Error) {
+            throw new Error("Failed to get presigned URL");
+        }
+        const response = await axios.get(presignedUrl);
+        let mpdContent = response.data; // this is the .mpd XML string
+        // Replace <BaseURL> with proxy path to your backend
+        const baseUrl = `<BaseURL>/api/v1/video/segment/${filepath}/</BaseURL>`;
+        if (!mpdContent.includes('<BaseURL>')) {
+            mpdContent = mpdContent.replace(
+                /(<Period[^>]*>)/,
+                `$1\n${baseUrl}`
+            );
+        }
+        res.setHeader("Content-Type", "application/dash+xml");
+        res.send(mpdContent);
+    } catch (error) {
+        console.error("Error serving manifest:", error);
+        res.status(500).json({ error: "Failed to fetch manifest." });
+    }
+};
+
 export const fetchSegment = async (req: Request, res: Response) => {
     try {
         const { filepath, filename } = req.params; // filepath = "song123.mp4", filename = "chunk-1-43.m4s"
@@ -173,7 +207,7 @@ export const fetchSegment = async (req: Request, res: Response) => {
         // split .mp4 ext
         const folder = path.parse(filepath).name
         const objectPath = `${folder}/${filename}`;
-        const minio = new MinioService('transcodes');
+        const minio = new MinioService();
         const presignedUrl = await minio.getPresignedUrl(objectPath, 60); // 1-minute
         if ((presignedUrl instanceof Error)){
             throw Error("failed to create presigned url")
@@ -192,7 +226,7 @@ export const getAllVideos = async (req: Request, res: Response) => {
     try {
         const db = new dbService();
         const videos = await db.getAllVideos();
-        
+        const minio = new MinioService();
         if (videos instanceof Error) {
             return res.status(500).json({
                 success: false,
@@ -200,12 +234,19 @@ export const getAllVideos = async (req: Request, res: Response) => {
                 error: videos.message
             });
         }
-
+        const videosWithThumbnail = await Promise.all(videos.map(async (video: any) => {
+            const thumbnail = await minio.getPresignedUrl(video.filepath+"/"+video.filepath+".jpg", 3600);
+            await db.updateVideoData(video.id, {thumbnail: thumbnail});
+            return {
+                ...video,
+                thumbnail: thumbnail
+            }
+        }));
         res.status(200).json({
             success: true,
             data: {
                 total: videos.length,
-                videos: videos
+                videos: videosWithThumbnail
             }
         });
     } catch (error) {

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllVideos = exports.fetchSegment = exports.uploadVideoHandler = exports.searchVideo = void 0;
+exports.getAllVideos = exports.fetchSegment = exports.fetchManifest = exports.uploadVideoHandler = exports.searchVideo = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
@@ -164,6 +164,37 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.uploadVideoHandler = uploadVideoHandler;
+const fetchManifest = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { filepath } = req.params;
+        if (!filepath) {
+            return res.status(400).json({
+                success: false,
+                message: "filepath is required",
+            });
+        }
+        const folder = path_1.default.parse(filepath).name;
+        const objectPath = `${folder}/${folder}.mpd`;
+        const minio = new minio_service_1.MinioService();
+        const presignedUrl = yield minio.getPresignedUrl(objectPath, 60);
+        if (presignedUrl instanceof Error) {
+            throw new Error("Failed to get presigned URL");
+        }
+        const response = yield axios_1.default.get(presignedUrl);
+        let mpdContent = response.data;
+        const baseUrl = `<BaseURL>/api/v1/video/segment/${filepath}/</BaseURL>`;
+        if (!mpdContent.includes('<BaseURL>')) {
+            mpdContent = mpdContent.replace(/(<Period[^>]*>)/, `$1\n${baseUrl}`);
+        }
+        res.setHeader("Content-Type", "application/dash+xml");
+        res.send(mpdContent);
+    }
+    catch (error) {
+        console.error("Error serving manifest:", error);
+        res.status(500).json({ error: "Failed to fetch manifest." });
+    }
+});
+exports.fetchManifest = fetchManifest;
 const fetchSegment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { filepath, filename } = req.params;
@@ -175,7 +206,7 @@ const fetchSegment = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const folder = path_1.default.parse(filepath).name;
         const objectPath = `${folder}/${filename}`;
-        const minio = new minio_service_1.MinioService('transcodes');
+        const minio = new minio_service_1.MinioService();
         const presignedUrl = yield minio.getPresignedUrl(objectPath, 60);
         if ((presignedUrl instanceof Error)) {
             throw Error("failed to create presigned url");
@@ -194,6 +225,7 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         const db = new postgres_service_1.dbService();
         const videos = yield db.getAllVideos();
+        const minio = new minio_service_1.MinioService();
         if (videos instanceof Error) {
             return res.status(500).json({
                 success: false,
@@ -201,11 +233,16 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 error: videos.message
             });
         }
+        const videosWithThumbnail = yield Promise.all(videos.map((video) => __awaiter(void 0, void 0, void 0, function* () {
+            const thumbnail = yield minio.getPresignedUrl(video.filepath + "/" + video.filepath + ".jpg", 3600);
+            yield db.updateVideoData(video.id, { thumbnail: thumbnail });
+            return Object.assign(Object.assign({}, video), { thumbnail: thumbnail });
+        })));
         res.status(200).json({
             success: true,
             data: {
                 total: videos.length,
-                videos: videos
+                videos: videosWithThumbnail
             }
         });
     }
