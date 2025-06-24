@@ -126,6 +126,7 @@ exports.Prisma.VideoScalarFieldEnum = {
   description: 'description',
   tags: 'tags',
   filepath: 'filepath',
+  thumbnail: 'thumbnail',
   status: 'status',
   duration: 'duration',
   resolution: 'resolution',

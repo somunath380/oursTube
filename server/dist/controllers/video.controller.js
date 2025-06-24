@@ -101,24 +101,29 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "Title, Description and Tags needs to be provided"
             });
         }
-        const tags = req.body.tags.split(/\s+/);
+        let tags = [];
+        if (!Array.isArray(req.body.tags && typeof req.body.tags === "string")) {
+            tags = req.body.tags.split(/\s+/);
+        }
         const minio = new minio_service_1.MinioService();
-        const isUploadedinMinio = yield minio.uploadFile(req.file.path, (_a = req.file) === null || _a === void 0 ? void 0 : _a.filename);
+        const filePath = (_a = req.file) === null || _a === void 0 ? void 0 : _a.path;
+        const fileNameWithoutExt = path_1.default.parse(filePath).name;
+        const objectName = `${fileNameWithoutExt}/${path_1.default.basename(filePath)}`;
+        const isUploadedinMinio = yield minio.uploadFile(filePath, objectName);
         if (isUploadedinMinio) {
             const videoMetadata = yield (0, extractMetadata_1.extractVideoMetadata)(req.file.path, (_b = req.body) === null || _b === void 0 ? void 0 : _b.title, (_c = req.body) === null || _c === void 0 ? void 0 : _c.description);
             const db = new postgres_service_1.dbService();
-            const uploadedVideoObjName = req.file.filename;
             const inputDbData = {
                 title: videoMetadata.title,
                 description: videoMetadata.description,
                 tags: tags,
-                filepath: uploadedVideoObjName,
+                filepath: fileNameWithoutExt,
                 status: "in-progress",
                 duration: videoMetadata.duration,
                 resolution: videoMetadata.resolution
             };
             const createdVideoInstance = yield db.storeVideo(inputDbData);
-            yield (0, uploadFile_1.deleteUploadedFile)(req.file.path);
+            yield (0, uploadFile_1.deleteUploadedFile)(path_1.default.dirname(filePath));
             if (!(createdVideoInstance instanceof Error)) {
                 const esService = new elasticsearch_service_1.EsService(env_1.config.ELASTICSEARCH_INDEX);
                 yield esService.indexDocument({
@@ -130,7 +135,8 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 });
                 const data = {
                     id: createdVideoInstance.id,
-                    filepath: uploadedVideoObjName,
+                    folderName: fileNameWithoutExt,
+                    filename: req.file.filename,
                     status: createdVideoInstance.status
                 };
                 yield (0, producer_1.produceDataToQueue)(env_1.config.QUEUE_NAME, data);

@@ -98,24 +98,29 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
                 message: "Title, Description and Tags needs to be provided"
             });
         }
-        const tags = req.body.tags.split(/\s+/)
+        let tags: string[] = []
+        if (!Array.isArray(req.body.tags && typeof req.body.tags === "string")){
+            tags = req.body.tags.split(/\s+/)
+        }
         const minio = new MinioService()
-        const isUploadedinMinio = await minio.uploadFile(req.file.path, req.file?.filename)
+        const filePath = req.file?.path; // full path to the uploaded file
+        const fileNameWithoutExt = path.parse(filePath).name;
+        const objectName = `${fileNameWithoutExt}/${path.basename(filePath)}`;
+        const isUploadedinMinio = await minio.uploadFile(filePath, objectName)
         if (isUploadedinMinio){
             const videoMetadata: videoMetadataInterface = await extractVideoMetadata(req.file.path, req.body?.title, req.body?.description)
             const db = new dbService()
-            const uploadedVideoObjName = req.file.filename
             const inputDbData = {
                 title: videoMetadata.title,
                 description: videoMetadata.description,
                 tags: tags,
-                filepath: uploadedVideoObjName,
+                filepath: fileNameWithoutExt,
                 status: "in-progress",
                 duration: videoMetadata.duration,
                 resolution: videoMetadata.resolution
             }
             const createdVideoInstance = await db.storeVideo(inputDbData)
-            await deleteUploadedFile(req.file.path)
+            await deleteUploadedFile(path.dirname(filePath))
             if (!(createdVideoInstance instanceof Error)) {
                 // add data in elasticsearch
                 const esService = new EsService(config.ELASTICSEARCH_INDEX);
@@ -128,7 +133,8 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
                 })
                 const data: producerDataInterface = {
                     id: createdVideoInstance.id,
-                    filepath: uploadedVideoObjName,
+                    folderName: fileNameWithoutExt,
+                    filename: req.file.filename, // file.mp4
                     status: createdVideoInstance.status
                 }
                 await produceDataToQueue(config.QUEUE_NAME, data)

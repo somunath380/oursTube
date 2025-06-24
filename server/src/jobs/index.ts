@@ -11,29 +11,14 @@ import { producerDataInterface } from "../interfaces/producerDataInterface";
 import {deleteUploadedFile} from "../middlewares/uploadFile"
 import { dbService } from "../services/postgres.service"
 
-const transcodedVideoSavedPath: string = path.resolve(__dirname, "../../transcodes")
-if (!fs.existsSync(transcodedVideoSavedPath)){
-    fs.mkdirSync(transcodedVideoSavedPath, {recursive: true})
+const baseTranscodeDir: string = path.resolve(__dirname, "../../transcodes")
+if (!fs.existsSync(baseTranscodeDir)){
+    fs.mkdirSync(baseTranscodeDir, {recursive: true})
 }
 
-// Debug configuration
-log("=== Worker Configuration ===")
-log(`RABBITMQ_URL: ${config.RABBITMQ_URL}`)
-log(`QUEUE_NAME: ${config.QUEUE_NAME}`)
-log(`DLQ_NAME: ${config.DLQ_NAME}`)
-log("===========================")
-
-async function testRabbitMQConnection(): Promise<boolean> {
-    try {
-        log(`Testing connection to: ${config.RABBITMQ_URL}`)
-        const connection = await amqp.connect(config.RABBITMQ_URL)
-        await connection.close()
-        log("RabbitMQ connection test successful!")
-        return true
-    } catch (error) {
-        log(`RabbitMQ connection test failed: ${error}`)
-        return false
-    }
+const baseThumbnailDir: string = path.resolve(__dirname, "../../thumbnails")
+if (!fs.existsSync(baseThumbnailDir)){
+    fs.mkdirSync(baseThumbnailDir, {recursive: true})
 }
 
 async function processVideoUpload(connection: any) {
@@ -44,35 +29,45 @@ async function processVideoUpload(connection: any) {
         durable: true,
         deadLetterRoutingKey: config.DLQ_NAME
     })
-    log("processing data in queue", config.QUEUE_NAME)
+    log("received data in queue", config.QUEUE_NAME)
     channel.consume(config.QUEUE_NAME, async (message: any) => {
         if (!message) return
         const data: producerDataInterface = JSON.parse(message.content.toString())
         log(`processing data: ${JSON.stringify(message)}`)
+        const folderName = data.folderName // song
+        const outputPath = path.resolve(baseTranscodeDir, folderName, (folderName+'.mpd'))
+        const thumbnailPath = path.resolve(baseThumbnailDir, (folderName +'.jpg')) //song.jpg
         try {
             const transcoder = new TranscodingService()
             // need to create prefetch url from minio
             const minio = new MinioService()
-            const presignedUrl = await minio.getPresignedUrl(data.filepath)
+            const objPath = folderName + '/' + data.filename
+            const presignedUrl = await minio.getPresignedUrl(objPath)
             if (typeof presignedUrl !== "string") {
                 log("Failed to get presigned URL:", presignedUrl instanceof Error ? presignedUrl.message : presignedUrl);
                 throw new Error("Failed to get presigned URL")
             }
-            const folderName = path.parse(data.filepath).name // song
-            const fileName = folderName+".mpd" // song.mpd
-            const outputPath = path.resolve(transcodedVideoSavedPath, folderName, fileName) // uploads/hls/song/song.mpd
+             // uploads/hls/song/song.mpd
             await transcoder.transcodeVideo(presignedUrl, outputPath)
-            let uploadSuccess = await minio.uploadFolder(path.resolve(transcodedVideoSavedPath, folderName), folderName)
-            if (uploadSuccess){
-                channel.ack(message)
-                await deleteUploadedFile(path.resolve(transcodedVideoSavedPath, folderName))
+            let uploadSuccess = await minio.uploadFolder(path.resolve(baseTranscodeDir, folderName), folderName)
+            // create thumbnail of it and save in db
+            await transcoder.extractThumbnail(presignedUrl, thumbnailPath)
+            const uploadThumbnailSuccess = await minio.uploadFile(thumbnailPath, folderName+"/"+path.basename(thumbnailPath))
+            if (uploadSuccess && uploadThumbnailSuccess){
+                await deleteUploadedFile(path.dirname(outputPath))
+                await deleteUploadedFile(thumbnailPath)
                 const db = new dbService()
-                await db.updateVideoStatus(data.id)
+                const thumbUrl = await minio.getPresignedUrl(folderName+"/"+(folderName +'.jpg'), 3600)
+                await db.updateVideoData(data.id, {
+                    status: "uploaded",
+                    thumbnail: thumbUrl
+                })
+                channel.ack(message)
             }
         } catch (error) {
             log(`Error processing data. error: ${error} for data: ${JSON.stringify(message)}`)
-            const folderName = path.parse(data.filepath).name // song
-            await deleteUploadedFile(path.resolve(transcodedVideoSavedPath, folderName))
+            await deleteUploadedFile(path.dirname(outputPath))
+            await deleteUploadedFile(thumbnailPath)
             const retryCount = message.properties && message.properties.headers && typeof message.properties.headers["x-retry"] !== "undefined"
                 ? message.properties.headers["x-retry"]
                 : 0
@@ -102,7 +97,7 @@ async function processVideoUpload(connection: any) {
 }
 
 async function connectAndProcess() {
-    const maxRetries = 30
+    const maxRetries = 10
     const retryDelay = 3000
     
     // Add initial delay to ensure RabbitMQ is ready
@@ -124,8 +119,7 @@ async function connectAndProcess() {
                 log(`Retrying in ${retryDelay}ms...`)
                 await new Promise(resolve => setTimeout(resolve, retryDelay))
             } else {
-                log(`Failed to connect to RabbitMQ after ${maxRetries} attempts. Exiting...`)
-                process.exit(1)
+                log(`Failed to connect to RabbitMQ after ${maxRetries} attempts. Exiting...`)                
             }
         }
     }
@@ -138,7 +132,6 @@ process.on('uncaughtException', (error) => {
     setTimeout(() => {
         connectAndProcess().catch((err) => {
             log(`Fatal error in worker: ${err}`)
-            process.exit(1)
         })
     }, 10000)
 })
@@ -149,7 +142,6 @@ process.on('unhandledRejection', (reason, promise) => {
     setTimeout(() => {
         connectAndProcess().catch((err) => {
             log(`Fatal error in worker: ${err}`)
-            process.exit(1)
         })
     }, 10000)
 })
@@ -158,5 +150,4 @@ process.on('unhandledRejection', (reason, promise) => {
 log("Starting worker...")
 connectAndProcess().catch((error) => {
     log(`Fatal error in worker: ${error}`)
-    process.exit(1)
 })

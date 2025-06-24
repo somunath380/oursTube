@@ -39,4 +39,23 @@ export class TranscodingService {
                 .run();
         });
     }
+    
+    public async extractThumbnail(inputPath: string, outputPath: string): Promise<string | Error> {
+        return new Promise((resolve, reject) => {
+            const outputDir = path.dirname(outputPath);
+            const filename = path.basename(outputPath);
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir, { recursive: true });
+            }
+            ffmpeg(inputPath)
+                .screenshots({
+                    timestamps: ['10'],
+                    filename: filename,
+                    folder: outputDir,
+                    size: '640x?'
+                })
+                .on('end', () => resolve(outputPath))
+                .on('error', err => reject(err));
+        });
+    }
 }

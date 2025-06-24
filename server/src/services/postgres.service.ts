@@ -47,11 +47,11 @@ export class dbService {
     /**
      * update status of video
      */
-    async updateVideoStatus(id: string, status: string = "uploaded"): Promise<ReturnType<typeof this.dbClient.video.update> | Error>{
+    async updateVideoData(id: string, data: any): Promise<ReturnType<typeof this.dbClient.video.update> | Error>{
         try {
             const videoData = await this.dbClient.video.update({
                 where: {id: id},
-                data: {status: status}
+                data
             })
             return videoData
         } catch (error) {

@@ -51,12 +51,12 @@ class dbService {
             }
         });
     }
-    updateVideoStatus(id_1) {
-        return __awaiter(this, arguments, void 0, function* (id, status = "uploaded") {
+    updateVideoData(id, data) {
+        return __awaiter(this, void 0, void 0, function* () {
             try {
                 const videoData = yield this.dbClient.video.update({
                     where: { id: id },
-                    data: { status: status }
+                    data
                 });
                 return videoData;
             }
