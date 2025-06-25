@@ -10,6 +10,7 @@ import { MinioService } from "../services/minio.service";
 import { producerDataInterface } from "../interfaces/producerDataInterface";
 import {deleteUploadedFile} from "../middlewares/uploadFile"
 import { dbService } from "../services/postgres.service"
+import { sseClients } from "../shared/globalState"
 
 const baseTranscodeDir: string = path.resolve(__dirname, "../../transcodes")
 if (!fs.existsSync(baseTranscodeDir)){
@@ -19,6 +20,15 @@ if (!fs.existsSync(baseTranscodeDir)){
 const baseThumbnailDir: string = path.resolve(__dirname, "../../thumbnails")
 if (!fs.existsSync(baseThumbnailDir)){
     fs.mkdirSync(baseThumbnailDir, {recursive: true})
+}
+
+function notifyVideoUploaded(videoId: string) {
+    const client = sseClients.get(videoId);
+    if (client) {
+        client.write(`data: ${JSON.stringify({ status: "uploaded", videoId })}\n\n`);
+        client.end(); // close connection if done (or keep open if you want to send more events)
+        sseClients.delete(videoId);
+    }
 }
 
 async function processVideoUpload(connection: any) {
@@ -63,6 +73,7 @@ async function processVideoUpload(connection: any) {
                     thumbnail: thumbUrl
                 })
                 channel.ack(message)
+                notifyVideoUploaded(data.id)
             }
         } catch (error) {
             log(`Error processing data. error: ${error} for data: ${JSON.stringify(message)}`)

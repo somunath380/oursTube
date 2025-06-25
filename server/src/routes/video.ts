@@ -1,6 +1,6 @@
 import express, {Router, RequestHandler} from "express"
 
-import {uploadVideoHandler, searchVideo, fetchSegment, getAllVideos, fetchManifest} from "../controllers/video.controller"
+import {uploadVideoHandler, searchVideo, fetchSegment, getAllVideos, fetchManifest, openSSEConnection} from "../controllers/video.controller"
 import { authenticate } from "../middlewares/auth"
 
 const videoRouter: Router = express.Router()
@@ -14,5 +14,7 @@ videoRouter.get("/all", authenticate as RequestHandler, getAllVideos as RequestH
 videoRouter.get("/manifest/:filepath", fetchManifest as RequestHandler);
 
 videoRouter.get("/segment/:filepath/:filename", fetchSegment as RequestHandler)
+
+videoRouter.get("/sse/:videoId", openSSEConnection as RequestHandler)
 
 export default videoRouter

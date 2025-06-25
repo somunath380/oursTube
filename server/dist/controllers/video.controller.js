@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllVideos = exports.fetchSegment = exports.fetchManifest = exports.uploadVideoHandler = exports.searchVideo = void 0;
+exports.openSSEConnection = exports.getAllVideos = exports.fetchSegment = exports.fetchManifest = exports.uploadVideoHandler = exports.searchVideo = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
@@ -23,6 +23,7 @@ const extractMetadata_1 = require("../utils/extractMetadata");
 const uploadFile_1 = require("../middlewares/uploadFile");
 const producer_1 = require("../utils/producer");
 const env_1 = require("../config/env");
+const globalState_1 = require("../shared/globalState");
 const videoUploadPath = path_1.default.resolve(__dirname, "../../uploads");
 if (!fs_1.default.existsSync(videoUploadPath)) {
     fs_1.default.mkdirSync(videoUploadPath, { recursive: true });
@@ -141,7 +142,8 @@ const uploadVideoHandler = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 };
                 yield (0, producer_1.produceDataToQueue)(env_1.config.QUEUE_NAME, data);
                 res.status(200).json({
-                    success: true
+                    success: true,
+                    videoId: createdVideoInstance.id
                 });
             }
             else {
@@ -256,4 +258,19 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getAllVideos = getAllVideos;
+const openSSEConnection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { videoId } = req.params;
+    const headers = new Headers({
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+    });
+    res.setHeaders(headers);
+    globalState_1.sseClients.set(videoId, res);
+    req.on("close", () => {
+        console.log(`SSE connection closed for video ${videoId}`);
+        globalState_1.sseClients.delete(videoId);
+    });
+});
+exports.openSSEConnection = openSSEConnection;
 //# sourceMappingURL=video.controller.js.map

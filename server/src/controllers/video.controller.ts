@@ -12,6 +12,7 @@ import { producerDataInterface } from "../interfaces/producerDataInterface";
 import {uploadVideo, deleteUploadedFile} from "../middlewares/uploadFile"
 import { produceDataToQueue } from "../utils/producer";
 import { config } from "../config/env";
+import { sseClients } from "../shared/globalState";
 
 const videoUploadPath: string = path.resolve(__dirname, "../../uploads")
 if (!fs.existsSync(videoUploadPath)){
@@ -139,7 +140,8 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
                 }
                 await produceDataToQueue(config.QUEUE_NAME, data)
                 res.status(200).json({
-                    success: true
+                    success: true,
+                    videoId: createdVideoInstance.id
                 })
             } else {
                 res.status(500).json({
@@ -258,3 +260,21 @@ export const getAllVideos = async (req: Request, res: Response) => {
         });
     }
 }
+
+export const openSSEConnection = async (req: Request, res: Response) => {
+    const {videoId} = req.params;
+    const headers = new Headers(
+        {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    );
+    res.setHeaders(headers)
+    sseClients.set(videoId, res)
+    req.on("close", () => {
+        console.log(`SSE connection closed for video ${videoId}`);
+        sseClients.delete(videoId);
+    });
+}
+

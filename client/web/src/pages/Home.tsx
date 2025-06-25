@@ -7,6 +7,9 @@ import { getAllVideos } from '../services/VideoService';
 import VideoPlayer from '../components/videoPlayer';
 import { useAuth } from '../hooks/useAuth';
 import { LoginButton } from '../components/Login';
+import NotificationCard from '../components/NotificationCard';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Home: React.FC = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
@@ -14,6 +17,15 @@ const Home: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
     const {user} = useAuth()
+    const [notification, setNotification] = useState<{
+        isVisible: boolean;
+        message: string;
+        type: 'success' | 'error' | 'info';
+    }>({
+        isVisible: false,
+        message: '',
+        type: 'info'
+    });
 
     useEffect(() => {
         if (!user) {
@@ -36,6 +48,43 @@ const Home: React.FC = () => {
     if (!user) {
         return <LoginButton />;
     }
+    const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+        setNotification({
+            isVisible: true,
+            message,
+            type
+        });
+    };
+    const hideNotification = () => {
+        setNotification(prev => ({ ...prev, isVisible: false }));
+    };
+    const handleVideoUploaded = (videoId: string) => {
+        // Show initial notification
+        showNotification('Video uploaded! Processing in progress...', 'info');
+        
+        // Set up SSE connection
+        const sse = new EventSource(`${API_URL}/video/sse/${videoId}`);
+        
+        sse.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('SSE message received:', data);
+            
+            if (data.status === 'uploaded') {
+                showNotification('Video uploaded and processed successfully!', 'success');
+                sse.close();
+                // Refresh video list
+                getAllVideos().then(fetchedVideos => {
+                    setVideos(fetchedVideos.data.videos);
+                });
+            }
+        };
+        
+        sse.onerror = (error) => {
+            console.error('SSE error:', error);
+            showNotification('Connection error. Please check upload status.', 'error');
+            sse.close();
+        };
+    };
     return (
         <div className="min-vh-100" style={{ paddingTop: '60px' }}>
         <Navbar
@@ -77,10 +126,17 @@ const Home: React.FC = () => {
             onUploadSuccess={() => {
                 setLoading(true);
                 getAllVideos().then(fetchedVideos => {
-                setVideos(fetchedVideos.data.videos);
-                setLoading(false);
+                    setVideos(fetchedVideos.data.videos);
+                    setLoading(false);
                 });
             }}
+            onVideoUploaded={handleVideoUploaded}
+        />
+        <NotificationCard
+            message={notification.message}
+            type={notification.type}
+            isVisible={notification.isVisible}
+            onClose={hideNotification}
         />
         {/* Video Modal/Player */}
         {selectedVideo && (

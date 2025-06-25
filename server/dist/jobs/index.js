@@ -54,6 +54,7 @@ const transcoding_service_1 = require("../services/transcoding.service");
 const minio_service_1 = require("../services/minio.service");
 const uploadFile_1 = require("../middlewares/uploadFile");
 const postgres_service_1 = require("../services/postgres.service");
+const globalState_1 = require("../shared/globalState");
 const baseTranscodeDir = path_1.default.resolve(__dirname, "../../transcodes");
 if (!fs_1.default.existsSync(baseTranscodeDir)) {
     fs_1.default.mkdirSync(baseTranscodeDir, { recursive: true });
@@ -61,6 +62,14 @@ if (!fs_1.default.existsSync(baseTranscodeDir)) {
 const baseThumbnailDir = path_1.default.resolve(__dirname, "../../thumbnails");
 if (!fs_1.default.existsSync(baseThumbnailDir)) {
     fs_1.default.mkdirSync(baseThumbnailDir, { recursive: true });
+}
+function notifyVideoUploaded(videoId) {
+    const client = globalState_1.sseClients.get(videoId);
+    if (client) {
+        client.write(`data: ${JSON.stringify({ status: "uploaded", videoId })}\n\n`);
+        client.end();
+        globalState_1.sseClients.delete(videoId);
+    }
 }
 function processVideoUpload(connection) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -102,6 +111,7 @@ function processVideoUpload(connection) {
                         thumbnail: thumbUrl
                     });
                     channel.ack(message);
+                    notifyVideoUploaded(data.id);
                 }
             }
             catch (error) {
