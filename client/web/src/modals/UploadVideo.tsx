@@ -3,13 +3,16 @@ import React, { useState } from 'react';
 import { uploadVideo } from '../services/VideoService';
 import TagInput from '../components/TagInput';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface UploadVideoProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess: () => void;
+  onVideoUploaded: (videoId: string) => void; // New prop to handle video upload
 }
 
-const UploadVideo = ({ isOpen, onClose, onUploadSuccess }: UploadVideoProps) => {
+const UploadVideo = ({ isOpen, onClose, onUploadSuccess, onVideoUploaded }: UploadVideoProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -20,22 +23,33 @@ const UploadVideo = ({ isOpen, onClose, onUploadSuccess }: UploadVideoProps) => 
     e.preventDefault();
     if (!file || !title || !description) return;
     setLoading(true);
+    
     const formData = new FormData();
     formData.append('video', file);
     formData.append('title', title);
     formData.append('description', description);
-    formData.append('tags', tags.join(','))
+    formData.append('tags', tags.join(','));
 
     try {
-      await uploadVideo(formData);
+      const data = await uploadVideo(formData);
+      const videoId = data.videoId;
+      
+      if (videoId) {
+        // Call the parent handler to set up SSE connection
+        onVideoUploaded(videoId);
+      }
+      
+      // Reset form and close modal immediately
       setFile(null);
       setTitle('');
       setDescription('');
       setTags([]);
-      onUploadSuccess(); // callback to refresh video list
       onClose();
+      onUploadSuccess(); // Refresh video list
+      
     } catch (err) {
-      alert('Upload failed');
+      console.error('Upload error:', err);
+      alert('Upload failed. Please try again.');
     } finally {
       setLoading(false);
     }
