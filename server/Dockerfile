@@ -2,11 +2,13 @@ FROM node:18-slim
 
 WORKDIR /app
 
-COPY package.json ./
+COPY server/package.json ./
 
 RUN npm install
 
-COPY . .
+COPY server/ ./
+
+COPY auths/ ../../../auths/
 
 RUN apt-get update -y && apt-get install -y openssl ffmpeg
 

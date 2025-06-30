@@ -1,6 +1,7 @@
 import { PrismaClient } from "../generated/prisma";
 import { Client } from "minio";
 import { Client as elasticClient } from "@elastic/elasticsearch";
+import Redis from 'ioredis';
 
 import {config} from "../config/env"
 
@@ -21,3 +22,10 @@ export const esClient = new elasticClient({
         'content-type': 'application/vnd.elasticsearch+json; compatible-with=8'
     }
 })
+
+export const RedisClient = new Redis({
+    host: config.REDIS_HOST,
+    port: Number(config.REDIS_PORT),
+    password: config.REDIS_PASSWORD,
+    retryStrategy: (times) => Math.min(times * 50, 2000),
+});

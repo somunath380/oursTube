@@ -4,8 +4,8 @@ services:
   server:
     image: server
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
     container_name: server
     ports:
       - 3000:3000
@@ -16,6 +16,14 @@ services:
       - minio
     networks:
       - onepiece
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: client
+    ports:
+      - 5173:5173
 
   worker:
     image: worker
@@ -55,7 +63,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: onepiece
     ports:
-      - "5433:5432"
+      - "6432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -94,6 +102,16 @@ services:
     networks:
       - onepiece
 
+  redis-img:
+    image: redis:latest
+    container_name: redis-img
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis-img-data:/data
+    restart: unless-stopped
+    networks:
+      - onepiece
   kibana:
     image: docker.elastic.co/kibana/kibana:8.13.0
     container_name: kibana
@@ -110,6 +128,7 @@ volumes:
   minio-data:
   pgdata:
   esdata:
+  redis-img-data:
 
 networks:
   onepiece:

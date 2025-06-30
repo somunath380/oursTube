@@ -10,7 +10,7 @@ import { MinioService } from "../services/minio.service";
 import { producerDataInterface } from "../interfaces/producerDataInterface";
 import {deleteUploadedFile} from "../middlewares/uploadFile"
 import { dbService } from "../services/postgres.service"
-import { sseClients } from "../shared/globalState"
+import {sendVideoUploadSuccessToQueue} from "../utils/producer"
 
 const baseTranscodeDir: string = path.resolve(__dirname, "../../transcodes")
 if (!fs.existsSync(baseTranscodeDir)){
@@ -22,12 +22,16 @@ if (!fs.existsSync(baseThumbnailDir)){
     fs.mkdirSync(baseThumbnailDir, {recursive: true})
 }
 
-function notifyVideoUploaded(videoId: string) {
-    const client = sseClients.get(videoId);
-    if (client) {
-        client.write(`data: ${JSON.stringify({ status: "uploaded", videoId })}\n\n`);
-        client.end(); // close connection if done (or keep open if you want to send more events)
-        sseClients.delete(videoId);
+async function notifyVideoUploaded(videoId: string) {
+    try {
+        const data = {}
+        await sendVideoUploadSuccessToQueue({
+            success: true,
+            videoId
+        })
+    } catch (error) {
+        console.error(`Error occured while publishing data into queue. error: ${error}`)
+        throw Error("Error occured while publishing data into queue")
     }
 }
 
@@ -73,7 +77,7 @@ async function processVideoUpload(connection: any) {
                     thumbnail: thumbUrl
                 })
                 channel.ack(message)
-                notifyVideoUploaded(data.id)
+                await notifyVideoUploaded(data.id)
             }
         } catch (error) {
             log(`Error processing data. error: ${error} for data: ${JSON.stringify(message)}`)

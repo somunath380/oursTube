@@ -7,6 +7,7 @@ import bodyParser from "body-parser"
 
 import router from "./routes/index"
 import { EsService } from "./services/elasticsearch.service";
+import {connectAndProcess} from "./jobs/notifyConsumer"
 
 const app: Application = express()
 const esService = new EsService(config.ELASTICSEARCH_INDEX)
@@ -39,3 +40,4 @@ const startServer = async () => {
 }
 
 startServer()
+connectAndProcess()

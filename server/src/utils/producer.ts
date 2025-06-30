@@ -21,3 +21,26 @@ export const produceDataToQueue = async (queueName: string, data: producerDataIn
         throw Error("Error occured while publishing data into queue")
     }
 }
+
+export const sendVideoUploadSuccessToQueue = async (data: any) => {
+    try {
+        const connection = await amqp.connect(config.RABBITMQ_URL)
+        const channel = await connection.createChannel()
+        await channel.assertQueue(config.NOTIFY_QUEUE_NAME, {
+            deadLetterExchange: '',
+            durable: true,
+            deadLetterRoutingKey: config.DLQ_NOTIFY_NAME
+        })
+        channel.sendToQueue(config.NOTIFY_QUEUE_NAME, Buffer.from(JSON.stringify(data)), {
+            persistent: true,
+        });
+        log(`Successfully sent data to queue: ${config.NOTIFY_QUEUE_NAME}, data: ${JSON.stringify(data)}`)
+        
+        // Close the connection after sending
+        await channel.close()
+        await connection.close()
+    } catch (error) {
+        console.error(`Error occured while publishing data into queue. error: ${error}`)
+        throw Error("Error occured while publishing data into queue")
+    }
+}

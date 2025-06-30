@@ -13,6 +13,7 @@ import {uploadVideo, deleteUploadedFile} from "../middlewares/uploadFile"
 import { produceDataToQueue } from "../utils/producer";
 import { config } from "../config/env";
 import { sseClients } from "../shared/globalState";
+import {RedisService} from "../services/redis.service"
 
 const videoUploadPath: string = path.resolve(__dirname, "../../uploads")
 if (!fs.existsSync(videoUploadPath)){
@@ -263,16 +264,16 @@ export const getAllVideos = async (req: Request, res: Response) => {
 
 export const openSSEConnection = async (req: Request, res: Response) => {
     const {videoId} = req.params;
-    const headers = new Headers(
-        {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive"
-        }
-    );
-    res.setHeaders(headers)
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders?.();
+    const keepAlive = setInterval(() => {
+        res.write(": keep-alive\n\n");
+    }, 30000);
     sseClients.set(videoId, res)
     req.on("close", () => {
+        clearInterval(keepAlive);
         console.log(`SSE connection closed for video ${videoId}`);
         sseClients.delete(videoId);
     });

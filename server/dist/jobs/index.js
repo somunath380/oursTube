@@ -54,7 +54,7 @@ const transcoding_service_1 = require("../services/transcoding.service");
 const minio_service_1 = require("../services/minio.service");
 const uploadFile_1 = require("../middlewares/uploadFile");
 const postgres_service_1 = require("../services/postgres.service");
-const globalState_1 = require("../shared/globalState");
+const producer_1 = require("../utils/producer");
 const baseTranscodeDir = path_1.default.resolve(__dirname, "../../transcodes");
 if (!fs_1.default.existsSync(baseTranscodeDir)) {
     fs_1.default.mkdirSync(baseTranscodeDir, { recursive: true });
@@ -64,12 +64,19 @@ if (!fs_1.default.existsSync(baseThumbnailDir)) {
     fs_1.default.mkdirSync(baseThumbnailDir, { recursive: true });
 }
 function notifyVideoUploaded(videoId) {
-    const client = globalState_1.sseClients.get(videoId);
-    if (client) {
-        client.write(`data: ${JSON.stringify({ status: "uploaded", videoId })}\n\n`);
-        client.end();
-        globalState_1.sseClients.delete(videoId);
-    }
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const data = {};
+            yield (0, producer_1.sendVideoUploadSuccessToQueue)({
+                success: true,
+                videoId
+            });
+        }
+        catch (error) {
+            console.error(`Error occured while publishing data into queue. error: ${error}`);
+            throw Error("Error occured while publishing data into queue");
+        }
+    });
 }
 function processVideoUpload(connection) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -111,7 +118,7 @@ function processVideoUpload(connection) {
                         thumbnail: thumbUrl
                     });
                     channel.ack(message);
-                    notifyVideoUploaded(data.id);
+                    yield notifyVideoUploaded(data.id);
                 }
             }
             catch (error) {

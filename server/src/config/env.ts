@@ -19,4 +19,9 @@ export const config = {
     DLQ_NAME: String(process.env.DLQ_NAME),
     ELASTICSEARCH_CLIENT_URL: String(process.env.ELASTICSEARCH_CLIENT_URL),
     ELASTICSEARCH_INDEX: String(process.env.ELASTICSEARCH_INDEX),
+    REDIS_HOST: String(process.env.REDIS_HOST),
+    REDIS_PORT: Number(process.env.REDIS_PORT),
+    REDIS_PASSWORD: String(process.env.REDIS_PASSWORD),
+    NOTIFY_QUEUE_NAME: String(process.env.NOTIFY_QUEUE_NAME),
+    DLQ_NOTIFY_NAME: String(process.env.DLQ_NOTIFY_NAME),
 }

@@ -20,6 +20,7 @@ const path_1 = __importDefault(require("path"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const index_1 = __importDefault(require("./routes/index"));
 const elasticsearch_service_1 = require("./services/elasticsearch.service");
+const notifyConsumer_1 = require("./jobs/notifyConsumer");
 const app = (0, express_1.default)();
 const esService = new elasticsearch_service_1.EsService(env_1.config.ELASTICSEARCH_INDEX);
 const port = env_1.config.PORT || 3000;
@@ -44,4 +45,5 @@ const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     });
 });
 startServer();
+(0, notifyConsumer_1.connectAndProcess)();
 //# sourceMappingURL=index.js.map
