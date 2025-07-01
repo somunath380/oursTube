@@ -12,10 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.openSSEConnection = exports.getAllVideos = exports.fetchSegment = exports.fetchManifest = exports.uploadVideoHandler = exports.searchVideo = void 0;
+exports.getThumbnail = exports.openSSEConnection = exports.getAllVideos = exports.fetchSegment = exports.fetchManifest = exports.uploadVideoHandler = exports.searchVideo = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
+const buffer_1 = require("buffer");
 const postgres_service_1 = require("../services/postgres.service");
 const minio_service_1 = require("../services/minio.service");
 const elasticsearch_service_1 = require("../services/elasticsearch.service");
@@ -235,16 +236,11 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 error: videos.message
             });
         }
-        const videosWithThumbnail = yield Promise.all(videos.map((video) => __awaiter(void 0, void 0, void 0, function* () {
-            const thumbnail = yield minio.getPresignedUrl(video.filepath + "/" + video.filepath + ".jpg", 3600);
-            yield db.updateVideoData(video.id, { thumbnail: thumbnail });
-            return Object.assign(Object.assign({}, video), { thumbnail: thumbnail });
-        })));
         res.status(200).json({
             success: true,
             data: {
                 total: videos.length,
-                videos: videosWithThumbnail
+                videos: videos
             }
         });
     }
@@ -276,4 +272,22 @@ const openSSEConnection = (req, res) => __awaiter(void 0, void 0, void 0, functi
     });
 });
 exports.openSSEConnection = openSSEConnection;
+const getThumbnail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const encoded = req.params.encodedUrl;
+        const base64 = decodeURIComponent(encoded);
+        const path = buffer_1.Buffer.from(base64, 'base64').toString('utf-8');
+        const minio = new minio_service_1.MinioService();
+        const thumbnail = yield minio.getPresignedUrl(path, 3600);
+        res.status(200).json({
+            success: true,
+            data: thumbnail
+        });
+    }
+    catch (error) {
+        console.error('Error serving thumbnail:', error);
+        res.status(500).json({ error: 'Could not stream video thumbnail.' });
+    }
+});
+exports.getThumbnail = getThumbnail;
 //# sourceMappingURL=video.controller.js.map

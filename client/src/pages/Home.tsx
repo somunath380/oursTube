@@ -107,14 +107,19 @@ const Home: React.FC = () => {
                     </div>
                     ) : (
                     <div className="row g-4">
-                        {videos.map((video, index) => (
-                        <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-3">
-                            <VideoCard
-                            {...video}
-                            onClick={() => setSelectedVideo(video)}
-                            />
-                        </div>
-                        ))}
+                        {videos.map((video, index) => {
+                            const base64 = encodeURIComponent(btoa(video.thumbnail)); // base64 + URI encode
+                            const thumbnailUrl = `${API_URL}/video/thumbnail/${base64}`;
+                            return (
+                                <div key={index} className="col-12 col-sm-6 col-md-4 col-lg-3">
+                                    <VideoCard
+                                        {...video}
+                                        thumbnail={thumbnailUrl}  // override the thumbnail prop with encoded URL
+                                        onClick={() => setSelectedVideo(video)}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
                     )}
             </div>
@@ -208,7 +213,7 @@ const Home: React.FC = () => {
                     overflow: 'hidden',
                 }}>
                     <VideoPlayer
-                    src={`/api/v1/video/manifest/${selectedVideo.filepath}`}
+                    src={`${API_URL}/video/manifest/${selectedVideo.filepath}`}
                     controls
                     autoPlay
                     style={{

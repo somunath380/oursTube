@@ -12,8 +12,20 @@ services:
     env_file:
       - ./server/.env.dev # change for production
     depends_on:
-      - rabbitmq
-      - minio
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+      postgres:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     networks:
       - onepiece
 
@@ -21,9 +33,19 @@ services:
     build:
       context: .
       dockerfile: client/Dockerfile
+    env_file:
+      - ./client/.env
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      - VITE_API_URL=http://localhost:3000/api/v1
+      - DOCKER=true
     container_name: client
     ports:
       - 5173:5173
+    networks:
+      - onepiece
 
   worker:
     image: worker
@@ -61,7 +83,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: onepiece
+      # POSTGRES_DB: onepiece
     ports:
       - "6432:5432"
     volumes:

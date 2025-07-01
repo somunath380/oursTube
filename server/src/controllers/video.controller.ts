@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import fs from "fs"
 import path from "path";
 import axios from "axios";
+import { Buffer } from "buffer";
 
 import { dbService } from "../services/postgres.service";
 import { MinioService } from "../services/minio.service";
@@ -237,19 +238,11 @@ export const getAllVideos = async (req: Request, res: Response) => {
                 error: videos.message
             });
         }
-        const videosWithThumbnail = await Promise.all(videos.map(async (video: any) => {
-            const thumbnail = await minio.getPresignedUrl(video.filepath+"/"+video.filepath+".jpg", 3600);
-            await db.updateVideoData(video.id, {thumbnail: thumbnail});
-            return {
-                ...video,
-                thumbnail: thumbnail
-            }
-        }));
         res.status(200).json({
             success: true,
             data: {
                 total: videos.length,
-                videos: videosWithThumbnail
+                videos: videos
             }
         });
     } catch (error) {
@@ -279,3 +272,19 @@ export const openSSEConnection = async (req: Request, res: Response) => {
     });
 }
 
+export const getThumbnail = async (req: Request, res: Response) => {
+    try {
+        const encoded = req.params.encodedUrl; // captured from wildcard
+        const base64 = decodeURIComponent(encoded); // handles %2F, %3D, etc.
+        const path = Buffer.from(base64, 'base64').toString('utf-8');
+        const minio = new MinioService();
+        const thumbnail = await minio.getPresignedUrl(path, 3600);
+        res.status(200).json({
+            success: true,
+            data: thumbnail
+        });
+    } catch (error) {
+        console.error('Error serving thumbnail:', error);
+        res.status(500).json({ error: 'Could not stream video thumbnail.' });
+    }
+}

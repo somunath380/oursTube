@@ -112,10 +112,9 @@ function processVideoUpload(connection) {
                     yield (0, uploadFile_1.deleteUploadedFile)(path_1.default.dirname(outputPath));
                     yield (0, uploadFile_1.deleteUploadedFile)(thumbnailPath);
                     const db = new postgres_service_1.dbService();
-                    const thumbUrl = yield minio.getPresignedUrl(folderName + "/" + (folderName + '.jpg'), 3600);
                     yield db.updateVideoData(data.id, {
                         status: "uploaded",
-                        thumbnail: thumbUrl
+                        thumbnail: folderName + "/" + (folderName + '.jpg')
                     });
                     channel.ack(message);
                     yield notifyVideoUploaded(data.id);

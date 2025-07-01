@@ -13,5 +13,6 @@ videoRouter.get("/all", auth_1.authenticate, video_controller_1.getAllVideos);
 videoRouter.get("/manifest/:filepath", video_controller_1.fetchManifest);
 videoRouter.get("/segment/:filepath/:filename", video_controller_1.fetchSegment);
 videoRouter.get("/sse/:videoId", video_controller_1.openSSEConnection);
+videoRouter.get("/thumbnail/:encodedUrl", video_controller_1.getThumbnail);
 exports.default = videoRouter;
 //# sourceMappingURL=video.js.map

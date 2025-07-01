@@ -71,10 +71,10 @@ async function processVideoUpload(connection: any) {
                 await deleteUploadedFile(path.dirname(outputPath))
                 await deleteUploadedFile(thumbnailPath)
                 const db = new dbService()
-                const thumbUrl = await minio.getPresignedUrl(folderName+"/"+(folderName +'.jpg'), 3600)
+                // const thumbUrl = await minio.getPresignedUrl(folderName+"/"+(folderName +'.jpg'), 3600)
                 await db.updateVideoData(data.id, {
                     status: "uploaded",
-                    thumbnail: thumbUrl
+                    thumbnail: folderName+"/"+(folderName +'.jpg')
                 })
                 channel.ack(message)
                 await notifyVideoUploaded(data.id)

@@ -32,18 +32,45 @@ const startServer = () => __awaiter(void 0, void 0, void 0, function* () {
     app.use((0, cors_1.default)(corsOptions));
     app.use(express_1.default.json());
     app.use(body_parser_1.default.json());
-    app.use('/videos', express_1.default.static(path_1.default.join(__dirname, "../uploads/hls")));
-    app.use("/api/v1", index_1.default);
-    app.get("/health", (req, res) => {
-        res.status(200).json({
-            success: true
+    try {
+        app.use('/videos', express_1.default.static(path_1.default.join(__dirname, "../uploads/hls")));
+        app.use("/api/v1", index_1.default);
+        app.get("/health", (req, res) => {
+            res.status(200).json({
+                success: true
+            });
         });
-    });
-    yield esService.createIndexIfNotExists();
-    app.listen(port, '0.0.0.0', () => {
-        (0, console_1.log)(`started server on port ${env_1.config.PORT}`);
-    });
+        (0, console_1.log)("Setting up Elasticsearch...");
+        yield esService.createIndexIfNotExists();
+        (0, console_1.log)("Elasticsearch setup complete");
+        (0, console_1.log)("Starting HTTP server...");
+        app.listen(port, '0.0.0.0', () => {
+            (0, console_1.log)(`✅ Server started successfully on port ${port}`);
+        }).on('error', (error) => {
+            (0, console_1.log)(`❌ Server failed to start: ${error.message}`);
+            process.exit(1);
+        });
+    }
+    catch (error) {
+        (0, console_1.log)(`❌ Failed to start server: ${error}`);
+        process.exit(1);
+    }
 });
-startServer();
-(0, notifyConsumer_1.connectAndProcess)();
+process.on('uncaughtException', (error) => {
+    (0, console_1.log)(`❌ Uncaught Exception: ${error}`);
+    process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    (0, console_1.log)(`❌ Unhandled Rejection at: ${promise}, reason: ${reason}`);
+    process.exit(1);
+});
+(0, console_1.log)("Starting application...");
+startServer().catch((error) => {
+    (0, console_1.log)(`❌ Failed to start application: ${error}`);
+    process.exit(1);
+});
+(0, console_1.log)("Starting notification consumer...");
+(0, notifyConsumer_1.connectAndProcess)().catch((error) => {
+    (0, console_1.log)(`❌ Failed to start notification consumer: ${error}`);
+});
 //# sourceMappingURL=index.js.map

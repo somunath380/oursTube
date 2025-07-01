@@ -22,22 +22,49 @@ const startServer = async () => {
     app.use(cors(corsOptions))
     app.use(express.json())
     app.use(bodyParser.json())
-
-    app.use('/videos', express.static(path.join(__dirname, "../uploads/hls")));
-
-    app.use("/api/v1", router)
-
-    app.get("/health", (req: Request, res: Response)=>{
-        res.status(200).json({
-            success: true
+    try{
+        app.use('/videos', express.static(path.join(__dirname, "../uploads/hls")));
+        app.use("/api/v1", router)
+        app.get("/health", (req: Request, res: Response)=>{
+            res.status(200).json({
+                success: true
+            })
         })
-    })
-    await esService.createIndexIfNotExists();
-
-    app.listen(port, '0.0.0.0', ()=>{
-        log(`started server on port ${config.PORT}`);
-    })
+        log("Setting up Elasticsearch...")
+        await esService.createIndexIfNotExists();
+        log("Elasticsearch setup complete")
+        log("Starting HTTP server...")
+        app.listen(port, '0.0.0.0', ()=>{
+            log(`✅ Server started successfully on port ${port}`);
+        }).on('error', (error) => {
+            log(`❌ Server failed to start: ${error.message}`)
+            process.exit(1)
+        })
+    } catch (error) {
+        log(`❌ Failed to start server: ${error}`)
+        process.exit(1)
+    }
 }
 
-startServer()
-connectAndProcess()
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    log(`❌ Uncaught Exception: ${error}`)
+    process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+    log(`❌ Unhandled Rejection at: ${promise}, reason: ${reason}`)
+    process.exit(1)
+})
+
+log("Starting application...")
+startServer().catch((error) => {
+    log(`❌ Failed to start application: ${error}`)
+    process.exit(1)
+})
+
+log("Starting notification consumer...")
+connectAndProcess().catch((error) => {
+    log(`❌ Failed to start notification consumer: ${error}`)
+    // Don't exit here as the main server might still work
+})
