@@ -1,4 +1,3 @@
-// src/components/LoginButton.tsx
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../firebase";
 

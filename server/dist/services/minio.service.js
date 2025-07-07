@@ -13,15 +13,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MinioService = void 0;
+const minio_1 = require("minio");
 const path_1 = __importDefault(require("path"));
 const db_1 = require("../db");
 const env_1 = require("../config/env");
 const mime_types_1 = __importDefault(require("mime-types"));
 const fs_1 = __importDefault(require("fs"));
 class MinioService {
-    constructor(bucketName = env_1.config.MINIO_VIDEO_UPLOAD_BUCKET_NAME) {
-        this.client = db_1.minioClient;
+    constructor(bucketName = env_1.config.MINIO_VIDEO_UPLOAD_BUCKET_NAME, publicClient = false) {
         this.bucket = bucketName;
+        if (publicClient) {
+            const publicUrl = new URL(env_1.config.MINIO_PUBLIC_URL);
+            this.client = new minio_1.Client({
+                endPoint: publicUrl.hostname,
+                port: parseInt(publicUrl.port || '80'),
+                useSSL: publicUrl.protocol === 'https:',
+                accessKey: env_1.config.MINIO_USER,
+                secretKey: env_1.config.MINIO_PASSWORD,
+            });
+        }
+        else {
+            this.client = db_1.minioClient;
+        }
     }
     uploadFile(localFilePath_1, objectName_1) {
         return __awaiter(this, arguments, void 0, function* (localFilePath, objectName, bucketName = this.bucket) {

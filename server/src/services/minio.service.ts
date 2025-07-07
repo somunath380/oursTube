@@ -10,10 +10,25 @@ export class MinioService {
     private client: Client;
     private bucket: string;
 
-    constructor(bucketName: string = config.MINIO_VIDEO_UPLOAD_BUCKET_NAME) {
-        this.client = minioClient;
+    constructor(
+        bucketName: string = config.MINIO_VIDEO_UPLOAD_BUCKET_NAME,
+        publicClient: boolean = false
+    ) {
         this.bucket = bucketName;
+        if (publicClient) {
+            const publicUrl = new URL(config.MINIO_PUBLIC_URL);
+            this.client = new Client({
+                endPoint: publicUrl.hostname,
+                port: parseInt(publicUrl.port || '80'),
+                useSSL: publicUrl.protocol === 'https:',
+                accessKey: config.MINIO_USER,
+                secretKey: config.MINIO_PASSWORD,
+            });
+        } else {
+            this.client = minioClient;
+        }
     }
+
     async uploadFile(localFilePath: string, objectName: string, bucketName: string = this.bucket): Promise<boolean | Error> {
         try {
             const mimeType = mime.lookup(localFilePath) || 'application/octet-stream';

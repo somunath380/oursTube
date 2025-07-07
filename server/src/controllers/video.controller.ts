@@ -15,6 +15,7 @@ import { produceDataToQueue } from "../utils/producer";
 import { config } from "../config/env";
 import { sseClients } from "../shared/globalState";
 import {RedisService} from "../services/redis.service"
+import { log } from "console";
 
 const videoUploadPath: string = path.resolve(__dirname, "../../uploads")
 if (!fs.existsSync(videoUploadPath)){
@@ -230,7 +231,7 @@ export const getAllVideos = async (req: Request, res: Response) => {
     try {
         const db = new dbService();
         const videos = await db.getAllVideos();
-        const minio = new MinioService();
+        const minio = new MinioService(config.MINIO_VIDEO_UPLOAD_BUCKET_NAME, true);
         if (videos instanceof Error) {
             return res.status(500).json({
                 success: false,
@@ -238,11 +239,29 @@ export const getAllVideos = async (req: Request, res: Response) => {
                 error: videos.message
             });
         }
+        const videosThumbnail = await Promise.all(
+            videos.map(async (video: any) => {
+                try {
+                    const thumbnailUrl = await minio.getPresignedUrl(video.thumbnail, 3000)
+                    log('thumbnailUrl: ', thumbnailUrl)
+                    return {
+                        ...video,
+                        thumbnail: thumbnailUrl
+                    }
+                } catch (error) {
+                    console.error(`Error generating thumbnail for video ${video.id}:`, error);
+                    return {
+                        ...video,
+                        thumbnail: null
+                    };
+                }
+            })
+        )
         res.status(200).json({
             success: true,
             data: {
                 total: videos.length,
-                videos: videos
+                videos: videosThumbnail
             }
         });
     } catch (error) {

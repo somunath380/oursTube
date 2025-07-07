@@ -15,6 +15,7 @@ exports.config = {
     MINIO_PASSWORD: String(process.env.MINIO_PASSWORD),
     MINIO_HOST: String(process.env.MINIO_HOST),
     MINIO_PORT: Number(process.env.MINIO_PORT),
+    MINIO_PUBLIC_URL: String(process.env.MINIO_PUBLIC_URL),
     MINIO_VIDEO_UPLOAD_BUCKET_NAME: String(process.env.MINIO_VIDEO_UPLOAD_BUCKET_NAME),
     MINIO_MPD_UPLOAD_BUCKET_NAME: String(process.env.MINIO_MPD_UPLOAD_BUCKET_NAME),
     RABBITMQ_URL: String(process.env.RABBITMQ_URL),

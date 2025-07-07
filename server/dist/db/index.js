@@ -11,7 +11,7 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const env_1 = require("../config/env");
 exports.prisma = new prisma_1.PrismaClient();
 exports.minioClient = new minio_1.Client({
-    endPoint: env_1.config.MINIO_HOST || 'minio',
+    endPoint: env_1.config.MINIO_HOST,
     port: env_1.config.MINIO_PORT,
     useSSL: false,
     accessKey: env_1.config.MINIO_USER,

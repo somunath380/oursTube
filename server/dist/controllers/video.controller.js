@@ -25,6 +25,7 @@ const uploadFile_1 = require("../middlewares/uploadFile");
 const producer_1 = require("../utils/producer");
 const env_1 = require("../config/env");
 const globalState_1 = require("../shared/globalState");
+const console_1 = require("console");
 const videoUploadPath = path_1.default.resolve(__dirname, "../../uploads");
 if (!fs_1.default.existsSync(videoUploadPath)) {
     fs_1.default.mkdirSync(videoUploadPath, { recursive: true });
@@ -228,7 +229,7 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         const db = new postgres_service_1.dbService();
         const videos = yield db.getAllVideos();
-        const minio = new minio_service_1.MinioService();
+        const minio = new minio_service_1.MinioService(env_1.config.MINIO_VIDEO_UPLOAD_BUCKET_NAME, true);
         if (videos instanceof Error) {
             return res.status(500).json({
                 success: false,
@@ -236,11 +237,22 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 error: videos.message
             });
         }
+        const videosThumbnail = yield Promise.all(videos.map((video) => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const thumbnailUrl = yield minio.getPresignedUrl(video.thumbnail, 3000);
+                (0, console_1.log)('thumbnailUrl: ', thumbnailUrl);
+                return Object.assign(Object.assign({}, video), { thumbnail: thumbnailUrl });
+            }
+            catch (error) {
+                console.error(`Error generating thumbnail for video ${video.id}:`, error);
+                return Object.assign(Object.assign({}, video), { thumbnail: null });
+            }
+        })));
         res.status(200).json({
             success: true,
             data: {
                 total: videos.length,
-                videos: videos
+                videos: videosThumbnail
             }
         });
     }

@@ -9,4 +9,4 @@ export interface Video {
   duration: number;
   created_at: string;
   tags: string[];
-} 
+}

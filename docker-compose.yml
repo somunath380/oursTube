@@ -26,6 +26,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    volumes:
+      - ./server:/app
     networks:
       - onepiece
 
@@ -42,6 +44,8 @@ services:
       - VITE_API_URL=http://localhost:3000/api/v1
       - DOCKER=true
     container_name: client
+    volumes:
+      - ./client:/app
     ports:
       - 5173:5173
     networks:

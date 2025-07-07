@@ -8,19 +8,19 @@ interface VideoCardProps extends Video {
 
 // In VideoCard.tsx
 const VideoCard = ({thumbnail, title, tags, description, duration, onClick}: VideoCardProps) => {
-    const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+    // const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
     
-    useEffect(() => {
-        const fetchThumbnail = async () => {
-            try {
-                const res = await axios.get(thumbnail);
-                setThumbnailUrl(res.data.data);
-            } catch (err) {
-                setThumbnailUrl(null);
-            }
-        };
-        fetchThumbnail();
-    }, [thumbnail]);
+    // useEffect(() => {
+    //     const fetchThumbnail = async () => {
+    //         try {
+    //             const res = await axios.get(thumbnail);
+    //             setThumbnailUrl(res.data.data);
+    //         } catch (err) {
+    //             setThumbnailUrl(null);
+    //         }
+    //     };
+    //     fetchThumbnail();
+    // }, [thumbnail]);
     return (
         <div
             className="video-card cursor-pointer"
@@ -38,7 +38,7 @@ const VideoCard = ({thumbnail, title, tags, description, duration, onClick}: Vid
             }}
         >
             <img
-                src={thumbnailUrl || ''}
+                src={thumbnail}
                 alt={title}
                 style={{
                     width: '100%',

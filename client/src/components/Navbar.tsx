@@ -23,9 +23,7 @@ const Navbar = ({ onUpload, setVideos, setLoading }: NavbarProps) => {
                     </svg>
                     <span style={{marginLeft: '-60px'}}>OursTube</span>
                 </Link>
-                {/* Search bar */}
                 <Search setVideos={setVideos} setLoading={setLoading} />
-                {/* Right side buttons */}
                 <div className="d-flex align-items-center">
                     <button className="btn btn-dark me-2" onClick={onUpload}>
                         <i className="bi bi-plus-lg"></i> Create
