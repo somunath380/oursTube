@@ -1,0 +1,161 @@
+version: '3.8'
+services:
+
+  server:
+    image: server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: server
+    ports:
+      - 3000:3000
+    env_file:
+      - ./server/.env.dev # change for production
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+      postgres:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - ./server:/app
+    networks:
+      - onepiece
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    env_file:
+      - ./client/.env
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      - VITE_API_URL=http://localhost:3000/api/v1
+      - DOCKER=true
+    container_name: client
+    volumes:
+      - ./client:/app
+    ports:
+      - 5173:5173
+    networks:
+      - onepiece
+
+  worker:
+    image: worker
+    build:
+      context: ./server
+      dockerfile: worker.Dockerfile
+    container_name: worker
+    restart: unless-stopped
+    env_file:
+      - ./server/.env.dev # change for production
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - onepiece
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000" 
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin123
+    volumes:
+      - minio-data:/data
+    command: server --console-address ":9001" /data
+    networks:
+      - onepiece
+
+  postgres:
+    image: postgres:17
+    container_name: onepiece
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # POSTGRES_DB: onepiece
+    ports:
+      - "6432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - onepiece
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - onepiece
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false            # security disabled for local dev
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m          # adjust heap size
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - onepiece
+
+  redis-img:
+    image: redis:latest
+    container_name: redis-img
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis-img-data:/data
+    restart: unless-stopped
+    networks:
+      - onepiece
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    networks:
+      - onepiece
+
+volumes:
+  minio-data:
+  pgdata:
+  esdata:
+  redis-img-data:
+
+networks:
+  onepiece:
+    driver: bridge
