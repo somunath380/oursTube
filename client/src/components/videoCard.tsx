@@ -1,6 +1,4 @@
 import type { Video } from '../interfaces';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
 
 interface VideoCardProps extends Video {
     onClick: () => void;
@@ -8,6 +6,27 @@ interface VideoCardProps extends Video {
 
 // In VideoCard.tsx
 const VideoCard = ({thumbnail, title, tags, description, duration, onClick}: VideoCardProps) => {
+    const formatVideoDuration = (durationSeconds: number) => {
+        if (!durationSeconds) return '0:00:00';
+        const hours = Math.floor(durationSeconds / 3600);
+        const minutes = Math.floor((durationSeconds % 3600) / 60);
+        const seconds = Math.floor(durationSeconds % 60);
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    const formatTexts = (text: string) => {
+        if (!text) return ""
+        return text
+            .toLowerCase()
+            .split(" ")
+            .map(word => word.charAt(0).toUpperCase()+word.slice(1))
+            .join(" ")
+    }
+    
     return (
         <div
             className="video-card cursor-pointer"
@@ -37,10 +56,10 @@ const VideoCard = ({thumbnail, title, tags, description, duration, onClick}: Vid
                 }}
             />
             <div style={{ padding: '12px 16px' }}>
-                <h6 className="mb-1 text-white" style={{ fontSize: 17, fontWeight: 600, textAlign: 'left', wordBreak: 'break-word' }}>{title}</h6>
-                <p className="mb-0 text-secondary" style={{ textAlign: 'left', fontSize: 14 }}>{description}</p>
+                <h6 className="mb-1 text-white" style={{ fontSize: 17, fontWeight: 600, textAlign: 'left', wordBreak: 'break-word' }}>{formatTexts(title)}</h6>
+                <p className="mb-0 text-secondary" style={{ textAlign: 'left', fontSize: 14 }}>{formatTexts(description)}</p>
                 <p className="mb-0 text-secondary" style={{ textAlign: 'left', fontSize: 13 }}>{tags.join(', ')}</p>
-                <p className="mb-0 text-secondary" style={{ textAlign: 'left', fontSize: 13 }}>{duration}</p>
+                <p className="mb-0 text-secondary" style={{ textAlign: 'left', fontSize: 13 }}>{formatVideoDuration(duration)}</p>
             </div>
         </div>
     );

@@ -19,7 +19,7 @@ class RedisService {
     set(key, value, expirySeconds) {
         return __awaiter(this, void 0, void 0, function* () {
             if (expirySeconds) {
-                yield this.client.hset(key, value, 'EX', expirySeconds);
+                yield this.client.setex(key, expirySeconds, value);
             }
             else {
                 yield this.client.set(key, value);

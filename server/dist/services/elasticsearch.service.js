@@ -23,6 +23,10 @@ class EsService {
                 console.log(`index ${this.indexName} does not exist. creating index`);
                 yield this.client.indices.create({
                     index: this.indexName,
+                    settings: {
+                        number_of_shards: 1,
+                        number_of_replicas: 1
+                    },
                     mappings: {
                         properties: {
                             title: { type: "text" },
@@ -59,6 +63,26 @@ class EsService {
                 }
             });
             return result.hits.hits.map(hit => (Object.assign(Object.assign({}, hit._source), { score: hit._score || undefined })));
+        });
+    }
+    getAllDocuments() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const results = yield this.client.search({
+                    index: this.indexName,
+                    query: {
+                        match_all: {}
+                    },
+                    sort: [
+                        { upload_date: { order: "desc" } }
+                    ]
+                });
+                return results.hits.hits.map((video) => (Object.assign({ id: video._id }, video._source)));
+            }
+            catch (error) {
+                console.error('Elasticsearch getAllDocuments error:', error);
+                throw error;
+            }
         });
     }
     deleteDocument(id) {

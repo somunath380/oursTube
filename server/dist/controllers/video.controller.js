@@ -48,7 +48,8 @@ const searchVideo = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 if (videoDetails instanceof Error) {
                     return null;
                 }
-                return Object.assign(Object.assign({}, videoDetails), { score: result.score });
+                const thumbnailUrl = `${env_1.config.API_URL}/video/thumbnail/${result.id}`;
+                return Object.assign(Object.assign({}, videoDetails), { thumbnail: thumbnailUrl, score: result.score });
             }
             catch (error) {
                 console.error(`Error fetching video details for ID ${result.id}:`, error);
@@ -228,7 +229,6 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         const db = new postgres_service_1.dbService();
         const videos = yield db.getAllVideos();
-        const minio = new minio_service_1.MinioService(env_1.config.MINIO_VIDEO_UPLOAD_BUCKET_NAME, true);
         if (videos instanceof Error) {
             return res.status(500).json({
                 success: false,

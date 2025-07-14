@@ -10,7 +10,7 @@ export class RedisService {
     }
     async set(key: string, value: string, expirySeconds?: number): Promise<void> {
         if (expirySeconds) {
-            await this.client.hset(key, value, 'EX', expirySeconds);
+            await this.client.setex(key, expirySeconds, value);
         } else {
             await this.client.set(key, value);
         }

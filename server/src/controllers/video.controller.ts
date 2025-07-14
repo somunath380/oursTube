@@ -2,7 +2,6 @@ import { Request, Response } from "express"
 import fs from "fs"
 import path from "path";
 import axios from "axios";
-import { Buffer } from "buffer";
 
 import { dbService } from "../services/postgres.service";
 import { MinioService } from "../services/minio.service";
@@ -14,7 +13,6 @@ import {uploadVideo, deleteUploadedFile} from "../middlewares/uploadFile"
 import { produceDataToQueue } from "../utils/producer";
 import { config } from "../config/env";
 import { sseClients } from "../shared/globalState";
-import {RedisService} from "../services/redis.service"
 import { log } from "console";
 
 const videoUploadPath: string = path.resolve(__dirname, "../../uploads")
@@ -45,8 +43,10 @@ export const searchVideo = async (req: Request, res: Response) => {
                     if (videoDetails instanceof Error) {
                         return null;
                     }
+                    const thumbnailUrl = `${config.API_URL}/video/thumbnail/${result.id}`; 
                     return {
                         ...videoDetails,
+                        thumbnail: thumbnailUrl,
                         score: result.score
                     };
                 } catch (error) {
@@ -231,7 +231,6 @@ export const getAllVideos = async (req: Request, res: Response) => {
     try {
         const db = new dbService();
         const videos = await db.getAllVideos();
-        const minio = new MinioService(config.MINIO_VIDEO_UPLOAD_BUCKET_NAME, true);
         if (videos instanceof Error) {
             return res.status(500).json({
                 success: false,
@@ -290,7 +289,6 @@ export const openSSEConnection = async (req: Request, res: Response) => {
         sseClients.delete(videoId);
     });
 }
-
 
 export const getThumbnail = async (req: Request, res: Response) => {
     try {

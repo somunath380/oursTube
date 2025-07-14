@@ -17,13 +17,17 @@ export class EsService {
             console.log(`index ${this.indexName} does not exist. creating index`)
             await this.client.indices.create({
                 index: this.indexName,
+                settings: {
+                    number_of_shards: 1,
+                    number_of_replicas: 1
+                },
                 mappings: {
-                properties: {
-                    title: { type: "text" },
-                    description: { type: "text" },
-                    tags: { type: "keyword" },
-                    upload_date: { type: "date" }
-                }
+                    properties: {
+                        title: { type: "text" },
+                        description: { type: "text" },
+                        tags: { type: "keyword" },
+                        upload_date: { type: "date" }
+                    }
                 }
             });
             console.log(`Created index: ${this.indexName}`);
@@ -54,6 +58,27 @@ export class EsService {
             ...hit._source!,
             score: hit._score || undefined
         }));
+    }
+
+    async getAllDocuments(): Promise<any[]> {
+        try {
+            const results = await this.client.search({
+                index: this.indexName,
+                query: {
+                    match_all: {}
+                },
+                sort: [
+                    { upload_date: { order: "desc" } }
+                ]
+            })
+            return results.hits.hits.map((video: any) => ({
+                id: video._id,
+                ...video._source
+            }))
+        } catch (error) {
+            console.error('Elasticsearch getAllDocuments error:', error);
+            throw error;
+        }
     }
 
     async deleteDocument(id: string): Promise<void> {
