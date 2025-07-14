@@ -2,7 +2,8 @@
 ## Description
 oursTube is a full-stack, containerized video sharing platform inspired by YouTube. It enables users to upload, transcode, search, and stream videos with support for multiple resolutions, real-time notifications, and scalable microservices. The project leverages modern technologies such as Node.js, React, Docker, PostgreSQL, MinIO (S3-compatible object storage), RabbitMQ, Elasticsearch, and Redis to deliver a robust and extensible media platform.
 
-<video controls src="./assets/ourstube-demo.webm" title="Demo"></video>
+## Demo
+![Mocker Demo](demo/mocker-demo.mp4)
 
 Key Features
 Video Upload & Transcoding: Users can upload videos, which are automatically transcoded into multiple resolutions for adaptive streaming.
