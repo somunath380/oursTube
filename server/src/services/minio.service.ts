@@ -1,13 +1,13 @@
 import { Client } from 'minio';
-import path from 'path';
 import { minioClient } from "../db";
+import { config } from "../config/env";
+import path from 'path';
 import { log } from 'console';
-import {config} from "../config/env"
 import mime from 'mime-types';
 import fs from "fs"
 
 export class MinioService {
-    private client: Client;
+    public client: Client;
     private bucket: string;
 
     constructor(
@@ -15,18 +15,7 @@ export class MinioService {
         publicClient: boolean = false
     ) {
         this.bucket = bucketName;
-        if (publicClient) {
-            const publicUrl = new URL(config.MINIO_PUBLIC_URL);
-            this.client = new Client({
-                endPoint: publicUrl.hostname,
-                port: parseInt(publicUrl.port || '80'),
-                useSSL: publicUrl.protocol === 'https:',
-                accessKey: config.MINIO_USER,
-                secretKey: config.MINIO_PASSWORD,
-            });
-        } else {
-            this.client = minioClient;
-        }
+        this.client = minioClient; 
     }
 
     async uploadFile(localFilePath: string, objectName: string, bucketName: string = this.bucket): Promise<boolean | Error> {

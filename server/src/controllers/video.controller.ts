@@ -242,7 +242,7 @@ export const getAllVideos = async (req: Request, res: Response) => {
         const videosThumbnail = await Promise.all(
             videos.map(async (video: any) => {
                 try {
-                    const thumbnailUrl = await minio.getPresignedUrl(video.thumbnail, 3000)
+                    const thumbnailUrl = `${config.API_URL}/video/thumbnail/${video.id}`; 
                     log('thumbnailUrl: ', thumbnailUrl)
                     return {
                         ...video,
@@ -291,17 +291,30 @@ export const openSSEConnection = async (req: Request, res: Response) => {
     });
 }
 
+
 export const getThumbnail = async (req: Request, res: Response) => {
     try {
-        const encoded = req.params.encodedUrl; // captured from wildcard
-        const base64 = decodeURIComponent(encoded); // handles %2F, %3D, etc.
-        const path = Buffer.from(base64, 'base64').toString('utf-8');
-        const minio = new MinioService();
-        const thumbnail = await minio.getPresignedUrl(path, 3600);
-        res.status(200).json({
-            success: true,
-            data: thumbnail
-        });
+        const { videoId } = req.params; // captured from wildcard
+        try {
+            const db = new dbService();
+            const videoData = await db.readVideo(videoId);
+            if (!videoData || videoData instanceof Error) {
+                return res.status(404).send('Video or thumbnail path not found in database.');
+            }
+            // Construct thumbnail object name based on convention, e.g., using video id or filepath
+            const objectName = (videoData as any).thumbnail;
+            if (!objectName) {
+                return res.status(404).send('Thumbnail not found for this video.');
+            }
+            const bucketName = config.MINIO_VIDEO_UPLOAD_BUCKET_NAME;
+            const minioService = new MinioService(bucketName); 
+            const stream = await minioService.client.getObject(bucketName, objectName);
+            res.setHeader('Content-Type', 'image/jpeg');
+            stream.pipe(res);
+        } catch (error) {
+            console.error('Error serving thumbnail:', error);
+            res.status(500).send('Error retrieving thumbnail');
+        }
     } catch (error) {
         console.error('Error serving thumbnail:', error);
         res.status(500).json({ error: 'Could not stream video thumbnail.' });

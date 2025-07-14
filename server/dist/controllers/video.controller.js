@@ -16,7 +16,6 @@ exports.getThumbnail = exports.openSSEConnection = exports.getAllVideos = export
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
-const buffer_1 = require("buffer");
 const postgres_service_1 = require("../services/postgres.service");
 const minio_service_1 = require("../services/minio.service");
 const elasticsearch_service_1 = require("../services/elasticsearch.service");
@@ -239,7 +238,7 @@ const getAllVideos = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const videosThumbnail = yield Promise.all(videos.map((video) => __awaiter(void 0, void 0, void 0, function* () {
             try {
-                const thumbnailUrl = yield minio.getPresignedUrl(video.thumbnail, 3000);
+                const thumbnailUrl = `${env_1.config.API_URL}/video/thumbnail/${video.id}`;
                 (0, console_1.log)('thumbnailUrl: ', thumbnailUrl);
                 return Object.assign(Object.assign({}, video), { thumbnail: thumbnailUrl });
             }
@@ -286,15 +285,27 @@ const openSSEConnection = (req, res) => __awaiter(void 0, void 0, void 0, functi
 exports.openSSEConnection = openSSEConnection;
 const getThumbnail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const encoded = req.params.encodedUrl;
-        const base64 = decodeURIComponent(encoded);
-        const path = buffer_1.Buffer.from(base64, 'base64').toString('utf-8');
-        const minio = new minio_service_1.MinioService();
-        const thumbnail = yield minio.getPresignedUrl(path, 3600);
-        res.status(200).json({
-            success: true,
-            data: thumbnail
-        });
+        const { videoId } = req.params;
+        try {
+            const db = new postgres_service_1.dbService();
+            const videoData = yield db.readVideo(videoId);
+            if (!videoData || videoData instanceof Error) {
+                return res.status(404).send('Video or thumbnail path not found in database.');
+            }
+            const objectName = videoData.thumbnail;
+            if (!objectName) {
+                return res.status(404).send('Thumbnail not found for this video.');
+            }
+            const bucketName = env_1.config.MINIO_VIDEO_UPLOAD_BUCKET_NAME;
+            const minioService = new minio_service_1.MinioService(bucketName);
+            const stream = yield minioService.client.getObject(bucketName, objectName);
+            res.setHeader('Content-Type', 'image/jpeg');
+            stream.pipe(res);
+        }
+        catch (error) {
+            console.error('Error serving thumbnail:', error);
+            res.status(500).send('Error retrieving thumbnail');
+        }
     }
     catch (error) {
         console.error('Error serving thumbnail:', error);

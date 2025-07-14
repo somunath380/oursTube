@@ -25,4 +25,5 @@ export const config = {
     REDIS_PASSWORD: String(process.env.REDIS_PASSWORD),
     NOTIFY_QUEUE_NAME: String(process.env.NOTIFY_QUEUE_NAME),
     DLQ_NOTIFY_NAME: String(process.env.DLQ_NOTIFY_NAME),
+    API_URL: String(process.env.API_URL)
 }

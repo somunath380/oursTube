@@ -17,6 +17,6 @@ videoRouter.get("/segment/:filepath/:filename", fetchSegment as RequestHandler)
 
 videoRouter.get("/sse/:videoId", openSSEConnection as RequestHandler)
 
-videoRouter.get("/thumbnail/:encodedUrl", getThumbnail as RequestHandler)
+videoRouter.get("/thumbnail/:videoId", getThumbnail as RequestHandler)
 
 export default videoRouter
