@@ -1,8 +1,4 @@
-import type { Video } from '../interfaces';
-
-interface VideoCardProps extends Video {
-    onClick: () => void;
-}
+import type { VideoCardProps } from '../../interfaces/video';
 
 // In VideoCard.tsx
 const VideoCard = ({thumbnail, title, tags, description, duration, onClick}: VideoCardProps) => {

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
-import VideoCard from '../components/videoCard';
-import UploadVideo from '../modals/UploadVideo';
-import type { Video } from '../interfaces';
+import Navbar from '../components/navbar/Navbar';
+import VideoCard from '../components/video/videoCard';
+import VideoPlayer from '../components/video/videoPlayer';
+import UploadVideo from '../components/video/UploadVideo';
+import type { Video } from '../interfaces/video';
 import { getAllVideos } from '../services/VideoService';
-import VideoPlayer from '../components/videoPlayer';
 import { useAuth } from '../hooks/useAuth';
-import { LoginButton } from '../components/Login';
-import NotificationCard from '../components/NotificationCard';
+import { LoginButton } from '../components/auth/Login';
+import NotificationCard from '../components/notifications/NotificationCard';
+import '../css/home.css';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -86,13 +87,13 @@ const Home: React.FC = () => {
         };
     };
     return (
-        <div className="min-vh-100" style={{ paddingTop: '60px' }}>
+        <div className="min-vh-100 home-container">
         <Navbar
             onUpload={() => setShowUploadModal(true)}
             setVideos={setVideos}
             setLoading={setLoading}
         />
-        <div className="container-fluid px-4 mt-5" style={{ marginTop: '90px' }}>
+        <div className="container-fluid px-4 mt-5 home-content">
             {loading ? (
             <div className="text-center">
                 <div className="spinner-border text-primary" role="status">
@@ -102,7 +103,7 @@ const Home: React.FC = () => {
             ) : (
             <div className="container-fluid px-4 mt-5">
                 {videos.length === 0 ? (
-                    <div className="text-center text-secondary" style={{ fontSize: '1.5rem', marginTop: '2rem' }}>
+                    <div className="text-center text-secondary no-videos-message">
                         No videos found.
                     </div>
                     ) : (
@@ -144,71 +145,20 @@ const Home: React.FC = () => {
         {selectedVideo && (
             <div
                 className="video-modal-backdrop"
-                style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                background: 'rgba(0,0,0,0.85)',
-                zIndex: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                }}
                 onClick={() => setSelectedVideo(null)}
             >
                 <div
-                style={{
-                    position: 'relative',
-                    background: '#181818',
-                    borderRadius: 12,
-                    boxShadow: '0 4px 32px rgba(0,0,0,0.7)',
-                    maxWidth: '90vw',
-                    maxHeight: '90vh',
-                    width: '900px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: 0,
-                }}
+                className="video-modal-container"
                 onClick={e => e.stopPropagation()}
                 >
                 <button
                     onClick={() => setSelectedVideo(null)}
-                    style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    background: 'rgba(0,0,0,0.5)',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: 32,
-                    cursor: 'pointer',
-                    zIndex: 2,
-                    borderRadius: '50%',
-                    width: 40,
-                    height: 40,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    }}
+                    className="video-modal-close-btn"
                     aria-label="Close"
                 >
                     &times;
                 </button>
-                <div style={{
-                    width: '100%',
-                    height: 'auto',
-                    aspectRatio: '16/9',
-                    background: '#000',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderTopLeftRadius: 12,
-                    borderTopRightRadius: 12,
-                    overflow: 'hidden',
-                }}>
+                <div className="video-modal-player-container">
                     <VideoPlayer
                     src={`${API_URL}/video/manifest/${selectedVideo.filepath}`}
                     controls
@@ -223,16 +173,8 @@ const Home: React.FC = () => {
                     }}
                     />
                 </div>
-                <div style={{
-                    width: '100%',
-                    padding: '16px 24px',
-                    color: '#fff',
-                    textAlign: 'left',
-                    borderBottomLeftRadius: 12,
-                    borderBottomRightRadius: 12,
-                    background: '#181818',
-                }}>
-                    <h5 style={{ margin: 0 }}>{selectedVideo.title}</h5>
+                <div className="video-modal-info">
+                    <h5 className="video-modal-title">{selectedVideo.title}</h5>
                 </div>
                 </div>
             </div>

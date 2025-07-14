@@ -1,11 +1,6 @@
 import { useState } from 'react';
-import { searchVideos, getAllVideos } from '../services/VideoService';
-import type { Video } from '../interfaces';
-
-interface SearchProps {
-  setVideos: (videos: Video[]) => void;
-  setLoading: (loading: boolean) => void;
-}
+import { searchVideos, getAllVideos } from '../../services/VideoService';
+import type { SearchProps } from '../../interfaces/searchAndNotification';
 
 const Search = ({ setVideos, setLoading }: SearchProps) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,9 +36,6 @@ const Search = ({ setVideos, setLoading }: SearchProps) => {
         />
         <button className="btn btn-dark ms-2" type="submit">
           <i className="bi bi-search"></i>
-        </button>
-        <button className="btn btn-dark ms-2" type="button">
-          <i className="bi bi-mic"></i>
         </button>
       </form>
     </div>

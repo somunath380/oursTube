@@ -1,16 +1,8 @@
 // client/web/src/modals/UploadVideo.tsx
 import React, { useState } from 'react';
-import { uploadVideo } from '../services/VideoService';
-import TagInput from '../components/TagInput';
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-interface UploadVideoProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onUploadSuccess: () => void;
-  onVideoUploaded: (videoId: string) => void; // New prop to handle video upload
-}
+import { uploadVideo } from '../../services/VideoService';
+import TagInput from './TagInput';
+import type { UploadVideoProps } from '../../interfaces/video';
 
 const UploadVideo = ({ isOpen, onClose, onUploadSuccess, onVideoUploaded }: UploadVideoProps) => {
   const [file, setFile] = useState<File | null>(null);

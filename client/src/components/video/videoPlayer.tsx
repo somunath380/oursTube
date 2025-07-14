@@ -1,12 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as dashjs from 'dashjs';
-
-interface VideoPlayerProps {
-  src: string;
-  autoPlay?: boolean;
-  controls?: boolean;
-  style?: React.CSSProperties;
-}
+import type { VideoPlayerProps } from '../../interfaces/video';
 
 const VideoPlayer: React.FC<VideoPlayerProps & { style?: React.CSSProperties }> = ({
   src,

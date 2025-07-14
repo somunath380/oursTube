@@ -1,13 +1,5 @@
 import React, { useEffect } from 'react';
-
-interface NotificationCardProps {
-  message: string;
-  type: 'success' | 'error' | 'info';
-  isVisible: boolean;
-  onClose: () => void;
-  autoClose?: boolean;
-  duration?: number;
-}
+import type { NotificationCardProps } from '../../interfaces/searchAndNotification';
 
 const NotificationCard: React.FC<NotificationCardProps> = ({
   message,

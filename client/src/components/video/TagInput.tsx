@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { TagInputProps } from '../../interfaces/video';
 
 const SUGGESTED_TAGS = [
     'rock music',
@@ -9,11 +10,6 @@ const SUGGESTED_TAGS = [
     'vlog',
     'tutorial',
 ];
-
-interface TagInputProps {
-    tags: string[];
-    setTags: React.Dispatch<React.SetStateAction<string[]>>;
-}
 
 function TagInput({ tags, setTags }: TagInputProps) {
     const [input, setInput] = useState('');
